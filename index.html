@@ -3,47 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alexander 3D</title>
+    <title>Alexander 3D | Shop</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        :root { --main: #00d4ff; --bg: #0b0b0b; }
+        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; }
         body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; padding-bottom: 80px; }
-        .hero { text-align: center; padding: 30px; border-bottom: 1px solid #333; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
-        .card { background: #161616; border-radius: 12px; overflow: hidden; border: 1px solid #333; }
-        .card img { width: 100%; height: 140px; object-fit: cover; }
+        .hero { text-align: center; padding: 40px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
+        .card { background: var(--card); border-radius: 15px; border: 1px solid #333; overflow: hidden; }
+        .card img { width: 100%; height: 150px; object-fit: cover; }
         .nav { position: fixed; bottom: 0; width: 100%; background: #111; display: flex; padding: 15px 0; border-top: 1px solid #333; }
         .nav-a { flex: 1; text-align: center; text-decoration: none; color: #555; font-size: 0.8em; }
     </style>
 </head>
 <body>
-    <div class="hero"><h1 style="color:var(--main)">ALEXANDER 3D</h1></div>
-    <div class="grid" id="grid"></div>
+    <div class="hero"><h1 style="color:var(--main); letter-spacing:3px;">ALEXANDER 3D</h1></div>
+    <div class="grid" id="main-grid"></div>
+
     <nav class="nav">
-        <a href="#" class="nav-a" style="color:var(--main)">🏠<br>HOME</a>
+        <a href="index.html" class="nav-a" style="color:var(--main)">🏠<br>HOME</a>
         <a href="order.html" class="nav-a">🛒<br>CART</a>
         <a href="profile.html" class="nav-a">👤<br>PROFILE</a>
     </nav>
 
 <script>
-    // --- TUTAJ WKLEJA PAN LINIE Z ADMINA ---
-    const PRODUCTS = [
-        // Wklej linię produktu tutaj
-    ];
-    const TRACKING = [
-        // Wklej linię trackingu tutaj
-    ];
-    // ---------------------------------------
+    const firebaseConfig = { databaseURL: "https://alexander3d-923d0-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    const g = document.getElementById('grid');
-    g.innerHTML = PRODUCTS.length ? PRODUCTS.map((p, i) => `
-        <div class="card" onclick="location.href='product.html?id=${i}'">
-            <img src="${p.img}">
-            <div style="padding:10px;"><strong>${p.n}</strong><br><span style="color:var(--main)">£${p.p}</span></div>
-        </div>
-    `).join('') : "<p style='width:100%; text-align:center;'>No items available.</p>";
-
-    // Zapisujemy TRACKING do pamięci, żeby profile.html go widział
-    localStorage.setItem('global_tracking', JSON.stringify(TRACKING));
+    // Automatyczne odświeżanie produktów u wszystkich klientów
+    db.ref('products').on('value', snap => {
+        const data = snap.val();
+        const grid = document.getElementById('main-grid');
+        grid.innerHTML = "";
+        for(let id in data) {
+            grid.innerHTML += `
+                <div class="card" onclick="location.href='product.html?id=${id}'">
+                    <img src="${data[id].image}">
+                    <div style="padding:10px;"><strong>${data[id].name}</strong><br><span style="color:var(--main)">£${data[id].price}</span></div>
+                </div>`;
+        }
+    });
 </script>
 </body>
 </html>
