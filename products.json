@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "name": "Alexander Drone Frame",
+    "price": "45.00",
+    "description": "High-quality 3D printed frame.",
+    "images": ["https://via.placeholder.com/400"],
+    "colors": ["Black", "Orange", "Carbon Grey"],
+    "stock": 10,
+    "shipping": "0"
+  }
+]
