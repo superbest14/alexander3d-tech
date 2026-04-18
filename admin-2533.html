@@ -2,61 +2,95 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Alexander 3D Admin</title>
+    <title>Alexander 3D | Live Admin</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { background: #0b0b0b; color: white; font-family: sans-serif; padding: 20px; }
+        :root { --main: #00d4ff; --bg: #0b0b0b; }
+        body { background: var(--bg); color: white; font-family: sans-serif; padding: 20px; }
         .box { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
         input, select { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; }
-        .btn { background: #00d4ff; color: black; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        #result { background: #000; color: #0f0; padding: 15px; border: 1px solid #0f0; display: none; margin-top: 10px; font-family: monospace; font-size: 11px; word-break: break-all; }
+        .btn { background: var(--main); color: black; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .item-list { border-top: 1px solid #333; margin-top: 10px; }
+        .item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #222; align-items: center; }
     </style>
 </head>
 <body>
-    <h2>Product & Tracking Generator</h2>
+    <h1>Live Admin Panel</h1>
 
     <div class="box">
-        <h3>1. New Product</h3>
-        <input type="text" id="pN" placeholder="Name">
-        <input type="number" id="pP" placeholder="Price £">
-        <input type="file" id="pF" accept="image/*">
-        <button class="btn" onclick="genP()">GENERATE PRODUCT LINE</button>
+        <h3>1. Add New Product</h3>
+        <input type="text" id="pName" placeholder="Product Name">
+        <input type="number" id="pPrice" placeholder="Price £">
+        <input type="file" id="pFile" accept="image/*">
+        <button class="btn" onclick="uploadProduct()">Publish Product</button>
     </div>
 
     <div class="box">
-        <h3>2. Delivery Status</h3>
-        <input type="text" id="oID" placeholder="Order ID">
-        <select id="oD">
+        <h3>2. Live Tracking Update</h3>
+        <input type="text" id="orderID" placeholder="Order ID (e.g. AT-1234)">
+        <select id="day">
             <option value="Today">Today</option>
             <option value="Tomorrow">Tomorrow</option>
         </select>
-        Between <input type="time" id="t1"> and <input type="time" id="t2">
-        <button class="btn" style="background:#28a745; color:white;" onclick="genT()">GENERATE TRACKING LINE</button>
+        <div style="display:flex; gap:10px; align-items:center;">
+            Between <input type="time" id="t1"> and <input type="time" id="t2">
+        </div>
+        <button class="btn" style="background:#28a745; color:white;" onclick="updateTracking()">Update Tracking</button>
     </div>
 
-    <div id="result"></div>
+    <div class="box">
+        <h3>3. Current Inventory</h3>
+        <div id="list" class="item-list"></div>
+    </div>
 
 <script>
-    let img = "";
-    document.getElementById('pF').onchange = e => {
-        let r = new FileReader();
-        r.onload = res => img = res.target.result;
+    // WKLEJ SWOJE DANE Z FIREBASE TUTAJ
+    const firebaseConfig = { databaseURL: "https://alexander3d-923d0-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let imgData = "";
+    document.getElementById('pFile').onchange = e => {
+        const r = new FileReader();
+        r.onload = res => imgData = res.target.result;
         r.readAsDataURL(e.target.files[0]);
     };
 
-    function genP() {
-        const line = `{ n: "${document.getElementById('pN').value}", p: "${document.getElementById('pP').value}", img: "${img}" },`;
-        show(line);
+    function uploadProduct() {
+        const name = document.getElementById('pName').value;
+        const price = document.getElementById('pPrice').value;
+        if(!name || !imgData) return alert("Fill all fields!");
+
+        db.ref('products').push({ name, price, image: imgData });
+        alert("Product Added Automatically!");
     }
 
-    function genT() {
-        const line = `{ id: "${document.getElementById('oID').value}", day: "${document.getElementById('oD').value}", time: "${document.getElementById('t1').value} - ${document.getElementById('t2').value}" },`;
-        show(line);
+    function updateTracking() {
+        const id = document.getElementById('orderID').value;
+        const day = document.getElementById('day').value;
+        const time = document.getElementById('t1').value + " - " + document.getElementById('t2').value;
+
+        db.ref('tracking/' + id).set({ day, time, status: "Out for delivery" });
+        alert("Tracking Updated for " + id);
     }
 
-    function show(txt) {
-        const r = document.getElementById('result');
-        r.style.display = "block";
-        r.innerText = "https://console.firebase.google.com/u/1/project/alexander3d-923d0/database/alexander3d-923d0-default-rtdb/data/~2F" + txt;
+    // Ładowanie listy produktów z możliwością usuwania
+    db.ref('products').on('value', snap => {
+        const data = snap.val();
+        const container = document.getElementById('list');
+        container.innerHTML = "";
+        for(let key in data) {
+            container.innerHTML += `
+                <div class="item">
+                    <span>${data[key].name} (£${data[key].price})</span>
+                    <button onclick="deleteProduct('${key}')" style="background:red; color:white; border:none; padding:5px; border-radius:5px;">DELETE</button>
+                </div>`;
+        }
+    });
+
+    function deleteProduct(key) {
+        if(confirm("Remove this product?")) db.ref('products/' + key).remove();
     }
 </script>
 </body>
