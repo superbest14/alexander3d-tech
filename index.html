@@ -5,47 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alexander 3D Tech | Home</title>
     <style>
-        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; --text: #eee; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-        nav { display: flex; justify-content: space-around; background: #111; padding: 20px; border-bottom: 2px solid var(--main); position: sticky; top: 0; z-index: 1000; }
-        nav a { color: white; text-decoration: none; font-weight: bold; }
-        .hero { text-align: center; padding: 40px; background: linear-gradient(to bottom, #111, #0b0b0b); }
+        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; --text: #eee; --nav-bg: #121212; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; }
         
-        /* Shipping Table */
-        .shipping-table { max-width: 800px; margin: 20px auto; border-collapse: collapse; width: 90%; background: #1a1a1a; border-radius: 10px; overflow: hidden; }
-        .shipping-table th, .shipping-table td { padding: 15px; border: 1px solid #333; text-align: left; }
-        .shipping-table th { background: var(--main); color: #000; }
+        /* Styl paska nawigacji */
+        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 1000; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); }
+        .tab-item { text-align: center; text-decoration: none; color: #888; font-size: 0.75em; flex: 1; transition: 0.3s; }
+        .tab-item.active { color: var(--main); }
+        .tab-icon { font-size: 1.8em; display: block; margin-bottom: 3px; }
+
+        .header { text-align: center; padding: 40px 20px; background: linear-gradient(180deg, #1a1a1a 0%, #0b0b0b 100%); border-bottom: 1px solid #333; }
+        .header h1 { margin: 0; letter-spacing: 3px; color: var(--main); font-size: 1.8em; }
+
+        .shipping-card { background: #1a1a1a; margin: 20px; border-radius: 15px; padding: 15px; border: 1px solid #333; }
+        .shipping-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        .shipping-table th { text-align: left; color: var(--main); padding-bottom: 10px; }
+        .shipping-table td { padding: 8px 0; border-top: 1px solid #222; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
-        .card { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #333; transition: 0.3s; cursor: pointer; }
-        .card img { width: 100%; height: 200px; object-fit: cover; }
+        .card { background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid #333; transition: 0.3s; position: relative; }
+        .card img { width: 100%; height: 220px; object-fit: cover; }
         .card-info { padding: 15px; }
-        .status-tag { font-size: 0.8em; padding: 4px 8px; border-radius: 5px; float: right; }
-        .sold-out { background: #ff4444; color: white; }
-        .price { font-size: 1.4em; color: var(--main); font-weight: bold; }
+        .price { font-size: 1.5em; color: var(--main); font-weight: bold; }
+        .sold-out-badge { position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; padding: 5px 10px; border-radius: 8px; font-weight: bold; font-size: 0.8em; }
     </style>
 </head>
 <body>
-    <nav>
-        <a href="index.html">HOME</a>
-        <a href="order.html">CART (<span id="cart-count">0</span>)</a>
-        <a href="profile.html">PROFILE / BOUGHT</a>
-    </nav>
 
-    <div class="hero">
+    <div class="header">
         <h1>ALEXANDER 3D TECH</h1>
-        <p>Premium Engineering & Custom Parts</p>
+        <p style="font-size: 0.9em; color: #888;">Engineering Excellence</p>
     </div>
 
-    <table class="shipping-table">
-        <thead><tr><th>Region</th><th>Estimated Delivery</th><th>Price</th></tr></thead>
-        <tbody>
-            <tr><td>United Kingdom</td><td>1-3 Working Days</td><td>Free / Calculated</td></tr>
-            <tr><td>Europe</td><td>5-7 Working Days</td><td>£9.99</td></tr>
-        </tbody>
-    </table>
+    <div class="shipping-card">
+        <table class="shipping-table">
+            <thead><tr><th>Destination</th><th>Delivery</th><th>Cost</th></tr></thead>
+            <tbody>
+                <tr><td>United Kingdom</td><td>1-2 Days</td><td>FREE</td></tr>
+                <tr><td>International</td><td>5-10 Days</td><td>£12.00</td></tr>
+            </tbody>
+        </table>
+    </div>
 
     <div class="grid" id="main-grid"></div>
+
+    <nav class="tab-bar">
+        <a href="index.html" class="tab-item active"><span class="tab-icon">🏠</span>HOME</a>
+        <a href="order.html" class="tab-item"><span class="tab-icon">🛒</span>CART</a>
+        <a href="profile.html" class="tab-item"><span class="tab-icon">👤</span>PROFILE</a>
+    </nav>
 
 <script>
     function renderProducts() {
@@ -53,19 +61,17 @@
         const grid = document.getElementById('main-grid');
         grid.innerHTML = products.map((p, i) => `
             <div class="card" onclick="window.location.href='product.html?id=${i}'">
+                ${p.soldOut ? '<div class="sold-out-badge">SOLD OUT</div>' : ''}
                 <img src="${p.images ? p.images[0] : ''}">
                 <div class="card-info">
-                    ${p.soldOut ? '<span class="status-tag sold-out">SOLD OUT</span>' : ''}
-                    <div style="font-weight:bold">${p.name}</div>
+                    <div style="font-weight:bold; font-size: 1.1em;">${p.name}</div>
                     <div class="price">£${p.price}</div>
-                    <div style="font-size:0.8em; color:#888">Shipping: ${p.shipping === '0' ? 'FREE' : '£'+p.shipping}</div>
+                    <div style="color:#888; font-size:0.85em;">Shipping: ${p.shipping === '0' || p.shipping === '' ? 'FREE' : '£'+p.shipping}</div>
                 </div>
             </div>
         `).join('');
     }
-    document.getElementById('cart-count').innerText = (JSON.parse(localStorage.getItem('cart')) || []).length;
     renderProducts();
 </script>
 </body>
 </html>
-
