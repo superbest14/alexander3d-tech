@@ -3,109 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Alexander 3D | Global Manager</title>
+    <title>Admin Alexander 3D | Auto-Sync</title>
     <style>
         :root { --main: #00d4ff; --bg: #0b0b0b; --card: #1a1a1a; }
         body { background: var(--bg); color: var(--main); font-family: 'Segoe UI', sans-serif; padding: 20px; }
         .container { max-width: 800px; margin: auto; }
-        .box { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid #333; margin-bottom: 30px; }
-        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; }
-        .btn { background: var(--main); color: #000; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 10px; text-transform: uppercase; }
-        .btn-copy { background: #28a745; margin-top: 10px; color: white; }
-        #json-output { background: #000; color: #0f0; padding: 15px; border-radius: 10px; white-space: pre-wrap; font-family: monospace; font-size: 12px; display: none; border: 1px solid #0f0; margin-top: 20px; }
-        .preview-img { width: 100px; height: 100px; object-fit: cover; border-radius: 10px; margin: 5px; border: 1px solid var(--main); }
+        .box { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid #333; margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; }
+        .btn { background: var(--main); color: #000; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 10px; }
+        .status { padding: 10px; margin-top: 10px; border-radius: 8px; display: none; text-align: center; }
+        .loader { display: none; color: white; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>PANEL ADMINA 3D</h1>
+        <h1>PANEL ADMINA (AUTO-SYNC)</h1>
+
+        <div class="box">
+            <h3>Ustawienia połączenia z GitHub</h3>
+            <input type="password" id="ghToken" placeholder="Wklej tutaj swój GitHub Token (PAT)">
+            <input type="text" id="ghRepo" placeholder="Twoja nazwa użytkownika/nazwa-repozytorium">
+        </div>
         
         <div class="box">
-            <h3>Nowy Produkt (Globalny)</h3>
+            <h3>Dodaj Nowy Produkt</h3>
             <input type="text" id="pName" placeholder="Nazwa produktu">
-            <textarea id="pDesc" placeholder="Opis produktu (wyświetli się u klienta)"></textarea>
+            <textarea id="pDesc" placeholder="Opis"></textarea>
             <input type="number" id="pPrice" placeholder="Cena £">
-            <input type="number" id="pStock" placeholder="Ilość na stanie (Stock)">
-            <input type="text" id="pColors" placeholder="Dostępne kolory (oddziel przecinkiem, np: Black, Red, Blue)">
-            <input type="text" id="pShip" placeholder="Cena wysyłki (0 = Darmowa)">
-            
-            <p>Zdjęcia produktu:</p>
+            <input type="number" id="pStock" placeholder="Ilość (Stock)">
+            <input type="text" id="pColors" placeholder="Kolory (np. Black, Red)">
             <input type="file" id="pFiles" multiple accept="image/*">
-            <div id="image-previews"></div>
             
-            <button class="btn" onclick="generateJSON()">GENERUJ KOD DO GITHUBA</button>
-        </div>
-
-        <div id="json-output-container" class="box" style="display:none;">
-            <h3>GOTOWY KOD JSON</h3>
-            <p style="color: #888; font-size: 0.8em;">Skopiuj poniższy kod i wklej go do pliku <b>products.json</b> na GitHubie, aby produkty pojawiły się u wszystkich.</p>
-            <div id="json-output"></div>
-            <button class="btn btn-copy" onclick="copyJSON()">SKOPIUJ KOD</button>
+            <button class="btn" onclick="publishToGithub()">OPUBLIKUJ PRODUKT WSZĘDZIE</button>
+            <div id="loader" class="loader">Wysyłanie do bazy danych... Proszę czekać...</div>
+            <div id="status" class="status"></div>
         </div>
     </div>
 
 <script>
     let uploadedImages = [];
 
-    // Obsługa wielu zdjęć
     document.getElementById('pFiles').onchange = e => {
         const files = e.target.files;
         uploadedImages = [];
-        document.getElementById('image-previews').innerHTML = '';
-        
         for(let f of files) {
             let reader = new FileReader();
-            reader.onload = r => {
-                uploadedImages.push(r.target.result);
-                document.getElementById('image-previews').innerHTML += `<img src="${r.target.result}" class="preview-img">`;
-            };
+            reader.onload = r => uploadedImages.push(r.target.result);
             reader.readAsDataURL(f);
         }
     };
 
-    function generateJSON() {
-        const name = document.getElementById('pName').value;
-        const price = document.getElementById('pPrice').value;
-        const desc = document.getElementById('pDesc').value;
-        const stock = document.getElementById('pStock').value;
-        const ship = document.getElementById('pShip').value;
-        const colors = document.getElementById('pColors').value.split(',').map(c => c.trim());
+    async function publishToGithub() {
+        const token = document.getElementById('ghToken').value;
+        const repo = document.getElementById('ghRepo').value;
+        const statusDiv = document.getElementById('status');
+        const loader = document.getElementById('loader');
 
-        if(!name || !price || uploadedImages.length === 0) {
-            return alert("Proszę Pana, trzeba podać nazwę, cenę i chociaż jedno zdjęcie!");
+        if(!token || !repo) return alert("Proszę Pana, muszę mieć token i nazwę repozytorium!");
+
+        loader.style.display = "block";
+        statusDiv.style.display = "none";
+
+        try {
+            const fileName = 'products.json';
+            const url = `https://api.github.com/repos/${repo}/contents/${fileName}`;
+
+            // 1. Pobierz obecną treść pliku i jego "sha" (wymagane przez GitHub do edycji)
+            let sha = "";
+            let currentProducts = [];
+            
+            const getRes = await fetch(url, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+
+            if (getRes.ok) {
+                const getData = await getRes.json();
+                sha = getData.sha;
+                currentProducts = JSON.parse(atob(getData.content));
+            }
+
+            // 2. Dodaj nowy produkt
+            const newProduct = {
+                id: Date.now(),
+                name: document.getElementById('pName').value,
+                description: document.getElementById('pDesc').value,
+                price: document.getElementById('pPrice').value,
+                stock: parseInt(document.getElementById('pStock').value),
+                colors: document.getElementById('pColors').value.split(',').map(c => c.trim()),
+                images: uploadedImages
+            };
+
+            currentProducts.push(newProduct);
+
+            // 3. Wyślij zaktualizowany plik z powrotem na GitHub
+            const putRes = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: `Dodano produkt: ${newProduct.name}`,
+                    content: btoa(unescape(encodeURIComponent(JSON.stringify(currentProducts, null, 2)))),
+                    sha: sha
+                })
+            });
+
+            if (putRes.ok) {
+                statusDiv.style.display = "block";
+                statusDiv.style.background = "#28a745";
+                statusDiv.style.color = "white";
+                statusDiv.innerText = "SUKCES! Produkt jest już widoczny na świecie.";
+            } else {
+                throw new Error("Błąd podczas wysyłania.");
+            }
+
+        } catch (err) {
+            statusDiv.style.display = "block";
+            statusDiv.style.background = "#ff4444";
+            statusDiv.style.color = "white";
+            statusDiv.innerText = "BŁĄD: " + err.message;
+        } finally {
+            loader.style.display = "none";
         }
-
-        // Pobieramy obecną listę z pamięci, żeby dodać nowy produkt do istniejących
-        let currentProducts = JSON.parse(localStorage.getItem('temp_products')) || [];
-        
-        const newProduct = {
-            id: Date.now(),
-            name: name,
-            description: desc,
-            price: price,
-            stock: parseInt(stock),
-            shipping: ship,
-            colors: colors,
-            images: uploadedImages
-        };
-
-        currentProducts.push(newProduct);
-        localStorage.setItem('temp_products', JSON.stringify(currentProducts));
-
-        // Pokazywanie wyniku
-        const output = document.getElementById('json-output');
-        output.textContent = JSON.stringify(currentProducts, null, 2);
-        output.style.display = 'block';
-        document.getElementById('json-output-container').style.display = 'block';
-        
-        alert("Kod wygenerowany! Skopiuj go teraz do pliku na GitHubie.");
-    }
-
-    function copyJSON() {
-        const text = document.getElementById('json-output').textContent;
-        navigator.clipboard.writeText(text).then(() => {
-            alert("Skopiowano! Teraz wklej to do products.json na GitHubie.");
-        });
     }
 </script>
 </body>
