@@ -2,70 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel | Easy Edit</title>
+    <title>Alexander 3D Admin</title>
     <style>
-        :root { --main: #00d4ff; --bg: #0b0b0b; }
-        body { background: var(--bg); color: white; font-family: sans-serif; padding: 20px; }
+        body { background: #0b0b0b; color: white; font-family: sans-serif; padding: 20px; }
         .box { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
-        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; }
-        .btn { background: var(--main); color: black; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 10px; }
-        #output { background: #000; color: #0f0; padding: 15px; border: 1px solid #0f0; white-space: pre-wrap; font-family: monospace; display: none; margin-top: 10px; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; }
+        .btn { background: #00d4ff; color: black; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        #result { background: #000; color: #0f0; padding: 15px; border: 1px solid #0f0; display: none; margin-top: 10px; font-family: monospace; font-size: 11px; word-break: break-all; }
     </style>
 </head>
 <body>
-    <h1>Alexander 3D Admin</h1>
+    <h2>Product & Tracking Generator</h2>
 
     <div class="box">
-        <h3>1. Create Product Code</h3>
-        <input type="text" id="pName" placeholder="Product Name">
-        <input type="number" id="pPrice" placeholder="Price £">
-        <input type="text" id="pColors" placeholder="Colors (e.g. Red, Black)">
-        <p>Photos (Select Files):</p>
-        <input type="file" id="pFiles" multiple accept="image/*">
-        <button class="btn" onclick="generateCode()">GENERATE PRODUCT CODE</button>
+        <h3>1. New Product</h3>
+        <input type="text" id="pN" placeholder="Name">
+        <input type="number" id="pP" placeholder="Price £">
+        <input type="file" id="pF" accept="image/*">
+        <button class="btn" onclick="genP()">GENERATE PRODUCT LINE</button>
     </div>
 
     <div class="box">
-        <h3>2. Delivery Tracking Update</h3>
-        <input type="text" id="orderID" placeholder="Order ID">
-        <select id="day">
+        <h3>2. Delivery Status</h3>
+        <input type="text" id="oID" placeholder="Order ID">
+        <select id="oD">
             <option value="Today">Today</option>
             <option value="Tomorrow">Tomorrow</option>
         </select>
-        <p>Delivery Hour Slot:</p>
-        <div style="display:flex; gap:10px;">
-            <input type="time" id="timeFrom"> to <input type="time" id="timeTo">
-        </div>
-        <button class="btn" style="background:#28a745; color:white;" onclick="generateTracking()">GENERATE TRACKING CODE</button>
+        Between <input type="time" id="t1"> and <input type="time" id="t2">
+        <button class="btn" style="background:#28a745; color:white;" onclick="genT()">GENERATE TRACKING LINE</button>
     </div>
 
-    <div id="output"></div>
+    <div id="result"></div>
 
-    <script>
-        let images = [];
-        document.getElementById('pFiles').onchange = e => {
-            images = [];
-            for(let f of e.target.files){
-                let r = new FileReader();
-                r.onload = res => images.push(res.target.result);
-                r.readAsDataURL(f);
-            }
-        };
+<script>
+    let img = "";
+    document.getElementById('pF').onchange = e => {
+        let r = new FileReader();
+        r.onload = res => img = res.target.result;
+        r.readAsDataURL(e.target.files[0]);
+    };
 
-        function generateCode() {
-            const code = `{ name: "${document.getElementById('pName').value}", price: "${document.getElementById('pPrice').value}", colors: ["${document.getElementById('pColors').value}"], images: ["${images[0]}"] },`;
-            const out = document.getElementById('output');
-            out.style.display = "block";
-            out.innerText = "COPY THIS TO THE 'PRODUCTS' ARRAY IN INDEX.HTML:\n\n" + code;
-        }
+    function genP() {
+        const line = `{ n: "${document.getElementById('pN').value}", p: "${document.getElementById('pP').value}", img: "${img}" },`;
+        show(line);
+    }
 
-        function generateTracking() {
-            const code = `{ id: "${document.getElementById('orderID').value}", day: "${document.getElementById('day').value}", time: "${document.getElementById('timeFrom').value} - ${document.getElementById('timeTo').value}" },`;
-            const out = document.getElementById('output');
-            out.style.display = "block";
-            out.innerText = "COPY THIS TO THE 'ORDERS' ARRAY IN INDEX.HTML:\n\n" + code;
-        }
-    </script>
+    function genT() {
+        const line = `{ id: "${document.getElementById('oID').value}", day: "${document.getElementById('oD').value}", time: "${document.getElementById('t1').value} - ${document.getElementById('t2').value}" },`;
+        show(line);
+    }
+
+    function show(txt) {
+        const r = document.getElementById('result');
+        r.style.display = "block";
+        r.innerText = "https://console.firebase.google.com/u/1/project/alexander3d-923d0/database/alexander3d-923d0-default-rtdb/data/~2F" + txt;
+    }
+</script>
 </body>
 </html>
