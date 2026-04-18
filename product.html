@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Product Details</title>
+    <style>
+        body { background: #0b0b0b; color: #eee; font-family: sans-serif; padding: 20px; }
+        .container { max-width: 900px; margin: auto; display: flex; gap: 30px; flex-wrap: wrap; }
+        .gallery { flex: 1; min-width: 300px; }
+        .main-img { width: 100%; border-radius: 15px; border: 1px solid var(--main); }
+        .thumbs { display: flex; gap: 10px; margin-top: 10px; }
+        .thumbs img { width: 60px; height: 60px; cursor: pointer; border-radius: 5px; }
+        .details { flex: 1; min-width: 300px; }
+        .buy-btn { background: #00d4ff; color: #000; border: none; padding: 20px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <div class="container" id="product-content"></div>
+<script>
+    const id = new URLSearchParams(window.location.search).get('id');
+    const products = JSON.parse(localStorage.getItem('products'));
+    const p = products[id];
+
+    function showImg(src) { document.getElementById('main-view').src = src; }
+
+    document.getElementById('product-content').innerHTML = `
+        <div class="gallery">
+            <img id="main-view" class="main-img" src="${p.images[0]}">
+            <div class="thumbs">${p.images.map(img => `<img src="${img}" onclick="showImg('${img}')">`).join('')}</div>
+        </div>
+        <div class="details">
+            <h1>${p.name}</h1>
+            <p style="color:#888">${p.description}</p>
+            <div style="font-size:2em; color:#00d4ff; margin:20px 0;">£${p.price}</div>
+            <button class="buy-btn" onclick="addToCart(${id})" ${p.soldOut ? 'disabled' : ''}>
+                ${p.soldOut ? 'OUT OF STOCK' : 'ADD TO CART'}
+            </button>
+        </div>
+    `;
+
+    function addToCart(index) {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart.push(products[index]);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        alert("Added to cart, Sir!");
+    }
+</script>
+</body>
+</html>
