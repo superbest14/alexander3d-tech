@@ -7,84 +7,120 @@
     <style>
         :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; --text: #eee; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; padding-bottom: 120px; }
-        .cart-item { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #333; display: flex; align-items: center; gap: 15px; }
-        .cart-item img { width: 70px; height: 70px; border-radius: 10px; object-fit: cover; }
-        .item-details { flex-grow: 1; }
-        .price { color: var(--main); font-weight: bold; }
-        .btn-remove { background: #ff4444; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8em; }
-        .checkout-box { position: fixed; bottom: 80px; left: 0; width: 100%; background: #111; padding: 20px; border-top: 1px solid var(--main); box-sizing: border-box; text-align: center; }
-        .pay-btn { background: var(--main); color: black; border: none; padding: 15px 40px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; max-width: 400px; }
+        h2 { color: var(--main); border-bottom: 1px solid #333; padding-bottom: 10px; }
         
+        /* Cart Items */
+        .cart-item { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #333; display: flex; align-items: center; gap: 15px; position: relative; }
+        .cart-item img { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; }
+        .details { flex-grow: 1; }
+        .remove-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.7em; }
+        
+        /* Checkout Form */
+        .form-box { background: var(--card); padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid #444; }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; }
+        
+        .total-box { text-align: right; font-size: 1.4em; margin: 20px 0; color: var(--main); font-weight: bold; }
+        .pay-btn { background: var(--main); color: black; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: bold; font-size: 1.1em; cursor: pointer; text-transform: uppercase; }
+
         /* Navigation Bar */
-        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #121212; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; }
-        .tab-item { text-align: center; text-decoration: none; color: #888; font-size: 0.7em; flex: 1; }
-        .tab-item.active { color: var(--main); }
+        .nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #111; display: flex; padding: 15px 0; border-top: 1px solid #333; z-index: 1000; }
+        .nav-a { flex: 1; text-align: center; text-decoration: none; color: #555; font-size: 0.8em; }
+        .active { color: var(--main); }
     </style>
 </head>
 <body>
 
-    <h2>Shopping Cart</h2>
-    <div id="cart-content"></div>
+    <h2>Your Shopping Cart</h2>
+    <div id="cart-list"></div>
 
-    <div class="checkout-box">
-        <div style="margin-bottom:10px; font-size: 1.2em;">Total: <span id="total-price" style="color:var(--main); font-weight:bold;">£0.00</span></div>
-        <button class="pay-btn" onclick="processCheckout()">CHECKOUT & PAY</button>
+    <div class="total-box">Total: <span id="total-price">£0.00</span></div>
+
+    <div class="form-box">
+        <h3 style="margin-top:0;">Shipping Details</h3>
+        <input type="text" id="custName" placeholder="Full Name">
+        <input type="email" id="custEmail" placeholder="Email Address">
+        <input type="text" id="custAddress" placeholder="Full Delivery Address">
+        <input type="text" id="custPost" placeholder="Postcode">
+        <button class="pay-btn" onclick="completeOrder()">Place Order & Pay</button>
     </div>
 
-    <nav class="tab-bar">
-        <a href="index.html" class="tab-item">🏠<br>HOME</a>
-        <a href="order.html" class="tab-item active">🛒<br>CART</a>
-        <a href="profile.html" class="tab-item">👤<br>PROFILE</a>
+    <nav class="nav">
+        <a href="index.html" class="nav-a">🏠<br>HOME</a>
+        <a href="order.html" class="nav-a active">🛒<br>CART</a>
+        <a href="profile.html" class="nav-a">👤<br>PROFILE</a>
     </nav>
 
 <script>
-    // In a real app without localstorage, this would come from a database. 
-    // For now, we use a session-based approach so it clears when the tab closes.
-    let cartItems = JSON.parse(sessionStorage.getItem('cart')) || [];
-
     function renderCart() {
-        const container = document.getElementById('cart-content');
-        if (cartItems.length === 0) {
-            container.innerHTML = "<p style='text-align:center; color:#555;'>Your cart is empty.</p>";
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const container = document.getElementById('cart-list');
+        let total = 0;
+
+        if (cart.length === 0) {
+            container.innerHTML = "<p style='text-align:center; color:#666;'>Your cart is empty.</p>";
             document.getElementById('total-price').innerText = "£0.00";
             return;
         }
 
-        let total = 0;
-        container.innerHTML = cartItems.map((item, index) => {
+        container.innerHTML = cart.map((item, index) => {
             total += parseFloat(item.price);
             return `
                 <div class="cart-item">
-                    <img src="${item.images[0]}">
-                    <div class="item-details">
+                    <img src="${item.image}">
+                    <div class="details">
                         <strong>${item.name}</strong><br>
-                        <span style="font-size:0.8em; color:#888;">Color: ${item.color}</span><br>
-                        <span class="price">£${item.price}</span>
+                        <span style="color:var(--main)">£${item.price}</span>
                     </div>
-                    <button class="btn-remove" onclick="removeItem(${index})">REMOVE</button>
+                    <button class="remove-btn" onclick="removeItem(${index})">REMOVE</button>
                 </div>
             `;
         }).join('');
+
         document.getElementById('total-price').innerText = "£" + total.toFixed(2);
     }
 
     function removeItem(index) {
-        cartItems.splice(index, 1);
-        sessionStorage.setItem('cart', JSON.stringify(cartItems));
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart.splice(index, 1);
+        localStorage.setItem('cart', JSON.stringify(cart));
         renderCart();
     }
 
-    function processCheckout() {
-        if(cartItems.length === 0) return alert("Cart is empty!");
+    function completeOrder() {
+        const name = document.getElementById('custName').value;
+        const email = document.getElementById('custEmail').value;
+        const address = document.getElementById('custAddress').value;
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
 
+        if (!name || !address || cart.length === 0) {
+            alert("Please fill in all details and add items to cart!");
+            return;
+        }
+
+        // Generate Random Order ID
         const orderID = "AT-" + Math.floor(1000 + Math.random() * 9000);
+
+        // Prepare info for YOU (Proszę Pana)
+        const orderDetails = {
+            id: orderID,
+            customer: name,
+            email: email,
+            address: address,
+            items: cart,
+            status: "Processing"
+        };
+
+        // SAVE ORDER TO PROFILE (For Customer Tracking)
+        let myOrders = JSON.parse(localStorage.getItem('my_orders')) || [];
+        myOrders.push(orderDetails);
+        localStorage.setItem('my_orders', JSON.stringify(myOrders));
+
+        // SIMULATE EMAIL TO YOU
+        console.log("SENDING EMAIL TO yinyan86@gmail.com...", orderDetails);
+
+        alert(`Thank you ${name}!\nOrder ${orderID} has been placed.\nDetails sent to your email.`);
         
-        // This is where you would normally trigger the EmailJS or Mailto
-        // For your setup, we show the summary and redirect to profile
-        alert(`Order ${orderID} placed!\nAn email with details has been sent to yinyan86@gmail.com`);
-        
-        // Clear cart after checkout
-        sessionStorage.removeItem('cart');
+        localStorage.removeItem('cart');
         window.location.href = "profile.html";
     }
 
