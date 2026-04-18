@@ -4,28 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile | Alexander 3D</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; --text: #eee; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; padding-bottom: 100px; }
         
-        .profile-header { text-align: center; padding: 30px 0; border-bottom: 1px solid #333; margin-bottom: 20px; }
-        .avatar { width: 80px; height: 80px; background: #333; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 2em; border: 2px solid var(--main); }
+        .header { text-align: center; padding: 30px 0; border-bottom: 1px solid #333; margin-bottom: 20px; }
+        .avatar { width: 70px; height: 70px; background: #222; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 2em; border: 2px solid var(--main); }
         
-        h2 { color: var(--main); font-size: 1.2em; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { color: var(--main); font-size: 1.1em; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Orders Section */
-        .order-card { background: var(--card); border-radius: 15px; padding: 20px; margin-bottom: 15px; border: 1px solid #333; position: relative; transition: 0.3s; }
-        .order-card:hover { border-color: var(--main); }
-        .order-id { font-weight: bold; color: var(--main); display: block; margin-bottom: 5px; }
+        .order-card { background: var(--card); border-radius: 15px; padding: 20px; margin-bottom: 15px; border: 1px solid #333; transition: 0.3s; }
+        .order-id { font-weight: bold; color: var(--main); font-family: monospace; }
         
-        /* Tracking Info Styling */
-        .tracking-box { margin-top: 15px; padding-top: 15px; border-top: 1px solid #444; }
-        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 5px; font-size: 0.75em; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
-        .status-processing { background: #555; color: white; }
-        .status-shipping { background: #28a745; color: white; box-shadow: 0 0 10px rgba(40, 167, 69, 0.4); }
+        /* Tracking Info */
+        .tracking-status { margin-top: 15px; padding-top: 15px; border-top: 1px solid #333; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 6px; font-size: 0.7em; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; }
+        .processing { background: #444; color: #aaa; }
+        .active-delivery { background: #28a745; color: white; box-shadow: 0 0 10px rgba(40, 167,  green, 0.3); }
         
-        .arrival-info { font-size: 0.9em; color: #bbb; }
-        .arrival-info b { color: #fff; }
+        .time-info { font-size: 0.9em; line-height: 1.5; }
+        .time-info b { color: var(--main); }
 
         /* Navigation Bar */
         .nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #111; display: flex; padding: 15px 0; border-top: 1px solid #333; z-index: 1000; }
@@ -35,16 +35,16 @@
 </head>
 <body>
 
-    <div class="profile-header">
+    <div class="header">
         <div class="avatar">👤</div>
-        <div id="user-name" style="font-weight: bold; font-size: 1.2em;">Customer</div>
-        <div style="font-size: 0.8em; color: #666;">Alexander 3D Member</div>
+        <div id="display-name" style="font-weight: bold; font-size: 1.2em;">Member</div>
+        <div style="font-size: 0.8em; color: #666;">Verified Account</div>
     </div>
 
     <section>
-        <h2>My Orders & Tracking</h2>
-        <div id="bought-list">
-            <p style="text-align:center; color:#444; margin-top:40px;">No orders found yet.</p>
+        <h2>Orders & Live Tracking</h2>
+        <div id="orders-container">
+            <p style="text-align:center; color:#444; margin-top:40px;">No active orders.</p>
         </div>
     </section>
 
@@ -55,64 +55,69 @@
     </nav>
 
 <script>
-    function loadProfileData() {
-        const boughtList = document.getElementById('bought-list');
+    // --- KONFIGURACJA FIREBASE ---
+    const firebaseConfig = { databaseURL: "https://alexander3d-923d0-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function initProfile() {
+        const container = document.getElementById('orders-container');
         
-        // 1. Pobieramy zamówienia zapisane lokalnie przez klienta po zakupie
+        // 1. Pobieramy zamówienia zapisane w przeglądarce klienta
         const myOrders = JSON.parse(localStorage.getItem('my_orders')) || [];
         
-        // 2. Pobieramy dane trackingowe, które Pan (Admin) wkleił do index.html
-        // (Dane te są przekazywane przez localStorage.setItem('global_tracking', ...) w index.html)
-        const globalTracking = JSON.parse(localStorage.getItem('global_tracking')) || [];
-
         if (myOrders.length === 0) return;
 
-        boughtList.innerHTML = myOrders.reverse().map(order => {
-            // Szukamy, czy dla tego Order ID istnieje wpis o dostawie od Admina
-            const liveTrack = globalTracking.find(t => t.id === order.id);
-            
-            let statusHTML = '';
-            
-            if (liveTrack) {
-                // Jeśli Admin ustawił godzinę
-                statusHTML = `
-                    <div class="tracking-box">
-                        <span class="status-badge status-shipping">Out for Delivery</span>
-                        <div class="arrival-info">
-                            Estimated Arrival: <b>${liveTrack.day}</b><br>
-                            Time Slot: <b>Between ${liveTrack.time}</b>
-                        </div>
-                    </div>
-                `;
-            } else {
-                // Jeśli zamówienie jest nowe i Admin jeszcze go nie przetworzył
-                statusHTML = `
-                    <div class="tracking-box">
-                        <span class="status-badge status-processing">Processing Order</span>
-                        <div class="arrival-info">Your delivery time will appear here soon.</div>
-                    </div>
-                `;
-            }
+        // Wyświetlamy imię z ostatniego zamówienia
+        document.getElementById('display-name').innerText = myOrders[myOrders.length - 1].customer;
 
-            return `
-                <div class="order-card">
-                    <span class="order-id">Order #${order.id}</span>
-                    <div style="font-size:0.8em; color:#888;">
-                        Date: ${new Date().toLocaleDateString()}<br>
-                        Items: ${order.items ? order.items.length : 1}
-                    </div>
-                    ${statusHTML}
+        container.innerHTML = ""; // Czyścimy loader
+
+        // 2. Dla każdego zamówienia klienta, sprawdzamy status w Firebase w czasie rzeczywistym
+        myOrders.reverse().forEach(order => {
+            const orderElement = document.createElement('div');
+            orderElement.className = 'order-card';
+            orderElement.id = `order-${order.id}`;
+            
+            // Renderujemy szkielet karty
+            orderElement.innerHTML = `
+                <span class="order-id">#${order.id}</span>
+                <div style="font-size:0.8em; color:#666; margin-top:5px;">Alexander 3D Order</div>
+                <div id="track-${order.id}" class="tracking-status">
+                    <span class="badge processing">Processing</span>
+                    <div class="time-info">Checking delivery details...</div>
                 </div>
             `;
-        }).join('');
+            container.appendChild(orderElement);
 
-        // Ustawienie imienia jeśli zostało podane przy zamówieniu
-        if(myOrders.length > 0) {
-            document.getElementById('user-name').innerText = myOrders[0].customer;
-        }
+            // 3. LIVE SYNC: Słuchamy zmian w bazie Firebase dla tego konkretnego Order ID
+            db.ref('tracking/' + order.id).on('value', snap => {
+                const liveData = snap.val();
+                const trackDiv = document.getElementById(`track-${order.id}`);
+
+                if (liveData) {
+                    // Jeśli Pan (Admin) dodał dane o dostawie
+                    trackDiv.innerHTML = `
+                        <span class="badge active-delivery">Out for Delivery</span>
+                        <div class="time-info">
+                            Arrival: <b>${liveData.day}</b><br>
+                            Time Slot: <b>${liveData.time}</b>
+                        </div>
+                    `;
+                } else {
+                    // Jeśli zamówienie jeszcze nie ma wpisanego trackingu
+                    trackDiv.innerHTML = `
+                        <span class="badge processing">Order Confirmed</span>
+                        <div class="time-info" style="color:#777;">
+                            Waiting for production slot...
+                        </div>
+                    `;
+                }
+            });
+        });
     }
 
-    window.onload = loadProfileData;
+    window.onload = initProfile;
 </script>
 
 </body>
