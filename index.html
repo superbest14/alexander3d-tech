@@ -3,25 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alexander 3D | Tech Shop</title>
+    <title>Alexander 3D | Shop</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 90px; }
-        .hero { text-align: center; padding: 50px 20px; border-bottom: 1px solid #222; }
-        .hero h1 { margin: 0; color: var(--main); letter-spacing: 4px; text-shadow: 0 0 10px rgba(0, 212, 255, 0.3); }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
-        .card { background: var(--card); border-radius: 18px; border: 1px solid #333; overflow: hidden; transition: 0.3s; }
-        .card:active { transform: scale(0.95); }
-        .card img { width: 100%; height: 160px; object-fit: cover; background: #222; }
-        .info { padding: 12px; }
-        .price { color: var(--main); font-weight: bold; font-size: 1.1em; }
-        .status-msg { text-align: center; padding: 40px; color: #555; font-size: 0.9em; }
-
-        /* Nav Bar */
+        .hero { text-align: center; padding: 40px 20px; }
+        .hero h1 { margin: 0; color: var(--main); letter-spacing: 3px; font-size: 1.8em; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; }
+        .card { background: var(--card); border-radius: 15px; border: 1px solid #333; overflow: hidden; }
+        .card img { width: 100%; height: 150px; object-fit: cover; background: #222; border-bottom: 1px solid #333; }
+        .info { padding: 10px; }
+        .price { color: var(--main); font-weight: bold; }
+        .loading { text-align: center; padding: 50px; color: #444; }
         .nav { position: fixed; bottom: 0; width: 100%; background: #111; display: flex; padding: 15px 0; border-top: 1px solid #333; z-index: 1000; }
-        .nav-a { flex: 1; text-align: center; text-decoration: none; color: #555; font-size: 0.8em; font-weight: bold; }
+        .nav-a { flex: 1; text-align: center; text-decoration: none; color: #666; font-size: 0.75em; font-weight: bold; }
         .active { color: var(--main); }
     </style>
 </head>
@@ -29,10 +26,10 @@
 
     <div class="hero">
         <h1>ALEXANDER 3D</h1>
-        <p style="color:#444; margin-top:5px;">Precision Mechanical Engineering</p>
+        <p style="color:#555; font-size: 0.8em; margin: 5px 0;">Mechanical Tech & 3D Prints</p>
     </div>
 
-    <div id="status" class="status-msg">Connecting to Database...</div>
+    <div id="status" class="loading">Syncing with Storefront...</div>
     <div class="grid" id="main-grid"></div>
 
     <nav class="nav">
@@ -42,53 +39,46 @@
     </nav>
 
 <script>
-    // --- FIREBASE CONFIG ---
-    // Proszę Pana, upewnij się, że ten URL kończy się znakiem "/"
-    const firebaseConfig = { 
-        databaseURL: "https://alexander3d-923d0-default-rtdb.firebaseio.com/" 
-    };
-    
+    const firebaseConfig = { databaseURL: "https://alexander3d-923d0-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function loadData() {
+    function startApp() {
         const grid = document.getElementById('main-grid');
         const status = document.getElementById('status');
 
-        // Słuchamy zmian w "products"
-        db.ref('products').on('value', (snap) => {
-            const data = snap.val();
-            
-            if (!data) {
-                status.innerText = "No products found in database. Add them in Admin panel.";
-                grid.innerHTML = "";
+        // Pobieranie produktów i zapisywanie do localStorage dla trackingu
+        db.ref('/').on('value', snap => {
+            const allData = snap.val();
+            const products = allData ? allData.products : null;
+            const tracking = allData ? allData.tracking : null;
+
+            // Zapisz tracking dla profile.html
+            if(tracking) localStorage.setItem('global_tracking_data', JSON.stringify(tracking));
+
+            status.style.display = "none";
+            grid.innerHTML = "";
+
+            if(!products) {
+                status.style.display = "block";
+                status.innerText = "No products available.";
                 return;
             }
 
-            status.style.display = "none"; // Ukryj status ładowania
-            grid.innerHTML = ""; // Czyścimy przed załadowaniem
-
-            // Pętla po produktach
-            for (let id in data) {
-                const p = data[id];
+            for(let id in products) {
                 grid.innerHTML += `
                     <div class="card" onclick="location.href='product.html?id=${id}'">
-                        <img src="${p.image || ''}" alt="${p.name}">
+                        <img src="${products[id].image}">
                         <div class="info">
-                            <div style="font-weight:bold; margin-bottom:5px;">${p.name}</div>
-                            <div class="price">£${p.price}</div>
+                            <div style="font-size: 0.9em; margin-bottom: 4px;">${products[id].name}</div>
+                            <div class="price">£${products[id].price}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }
-        }, (error) => {
-            // Jeśli wystąpi błąd (np. brak uprawnień)
-            status.innerText = "Error: " + error.message;
-            console.error(error);
         });
     }
 
-    window.onload = loadData;
+    window.onload = startApp;
 </script>
 </body>
 </html>
