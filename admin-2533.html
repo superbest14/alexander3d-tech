@@ -1,86 +1,94 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Alexander 3D | Easy Manager</title>
+    <title>Admin Panel | Alexander 3D Tech</title>
     <style>
         :root { --main: #00d4ff; --bg: #0b0b0b; --card: #1a1a1a; --danger: #ff4444; }
-        body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; padding: 10px; }
-        .box { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
-        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; }
-        .btn { background: var(--main); color: #000; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 10px; text-transform: uppercase; }
-        .btn-del { background: var(--danger); color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; border: none; }
-        .status-msg { padding: 10px; margin-top: 10px; border-radius: 8px; display: none; text-align: center; }
-        .prod-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333; }
-        .preview-img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
+        body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        .box { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid #333; margin-bottom: 25px; }
+        h2 { color: var(--main); border-bottom: 1px solid #333; padding-bottom: 10px; }
+        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; }
+        .btn { background: var(--main); color: #000; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 10px; text-transform: uppercase; transition: 0.3s; }
+        .btn:hover { background: #00b8e6; box-shadow: 0 0 15px var(--main); }
+        .btn-red { background: var(--danger); color: white; margin-top: 10px; width: auto; padding: 5px 15px; }
+        .status-log { padding: 10px; margin-top: 10px; border-radius: 8px; display: none; text-align: center; font-weight: bold; }
+        .item-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333; }
+        .img-pre { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>Alexander 3D - Global Admin</h1>
 
-    <h1>Panel Sterowania Alexander 3D</h1>
+        <div class="box">
+            <h2>1. GitHub Connection</h2>
+            <input type="password" id="ghToken" placeholder="GitHub Personal Access Token (PAT)">
+            <input type="text" id="ghRepo" placeholder="Username/Repository (e.g., Alexander/Shop)">
+        </div>
+        
+        <div class="box">
+            <h2>2. Inventory Management</h2>
+            <input type="text" id="pName" placeholder="Product Name">
+            <input type="number" id="pPrice" placeholder="Price £">
+            <input type="number" id="pStock" placeholder="Stock Quantity">
+            <input type="text" id="pColors" placeholder="Available Colors (comma separated: Black, Silver, Red)">
+            <textarea id="pDesc" placeholder="Product Description"></textarea>
+            <input type="file" id="pFiles" multiple accept="image/*">
+            <button class="btn" onclick="uploadProduct()">Publish Product Globally</button>
+            <div id="status" class="status-log"></div>
+        </div>
 
-    <div class="box">
-        <h3>1. Dodaj Produkt (Kolory i Ilość)</h3>
-        <input type="text" id="pName" placeholder="Nazwa produktu">
-        <input type="number" id="pPrice" placeholder="Cena £">
-        <input type="number" id="pStock" placeholder="Ilość na stanie">
-        <input type="text" id="pColors" placeholder="Kolory (np. Black, Red, Carbon)">
-        <textarea id="pDesc" placeholder="Opis produktu"></textarea>
-        <input type="file" id="pFiles" multiple accept="image/*">
-        <button class="btn" onclick="publishProduct()">Opublikuj Sklep</button>
-        <div id="status" class="status-msg"></div>
-    </div>
+        <div class="box">
+            <h2>3. Order Tracking Updates</h2>
+            <input type="text" id="orderID" placeholder="Order ID (e.g., AT-5592)">
+            <select id="orderStatus">
+                <option value="Manufacturing">Manufacturing</option>
+                <option value="Quality Check">Quality Check</option>
+                <option value="Packed">Packed & Ready</option>
+                <option value="Shipped">Shipped</option>
+                <option value="Delivered">Delivered</option>
+            </select>
+            <button class="btn" style="background:#28a745; color:white;" onclick="updateOrderStatus()">Update Delivery Status</button>
+        </div>
 
-    <div class="box">
-        <h3>2. Status Paczki (Tracking)</h3>
-        <input type="text" id="trackID" placeholder="Wpisz ID Zamówienia (np. AT-1234)">
-        <select id="newStatus">
-            <option value="In Production">W produkcji</option>
-            <option value="Quality Check">Kontrola Jakości</option>
-            <option value="Shipped">Wysłano / Shipped</option>
-            <option value="Delivered">Dostarczono</option>
-        </select>
-        <button class="btn" style="background:#28a745; color:white;" onclick="updateOrder()">Aktualizuj Status</button>
-    </div>
-
-    <div class="box">
-        <h3>3. Zarządzaj Produktami (Usuwanie)</h3>
-        <button class="btn" style="background:#444; color:white;" onclick="fetchList()">Odśwież Listę Produktów</button>
-        <div id="admin-product-list"></div>
+        <div class="box">
+            <h2>4. Current Inventory (Remove Items)</h2>
+            <button class="btn" style="background:#444; color:white;" onclick="fetchList()">Refresh Inventory List</button>
+            <div id="inventory-list"></div>
+        </div>
     </div>
 
 <script>
-    // --- KONFIGURACJA (Wpisz to raz i zapomnij) ---
-    const CONFIG = {
-        token: "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", // Wklej tutaj swój token (ten który wygenerowałeś)
-        repo: "superbest14/alexander3d-tech"    // Wklej tutaj np. "Alexander/Sklep"
-    };
-    // ----------------------------------------------
-
-    let uploadedImages = [];
+    let imagesBase64 = [];
     document.getElementById('pFiles').onchange = e => {
-        const files = e.target.files;
-        uploadedImages = [];
-        for(let f of files) {
+        imagesBase64 = [];
+        for(let file of e.target.files) {
             let reader = new FileReader();
-            reader.onload = r => uploadedImages.push(r.target.result);
-            reader.readAsDataURL(f);
+            reader.onload = r => imagesBase64.push(r.target.result);
+            reader.readAsDataURL(file);
         }
     };
 
-    async function getGHFile(path) {
-        const url = `https://api.github.com/repos/${CONFIG.repo}/contents/${path}`;
-        const res = await fetch(url, { headers: { 'Authorization': `token ${CONFIG.token}` } });
+    async function getGHData(file) {
+        const token = document.getElementById('ghToken').value;
+        const repo = document.getElementById('ghRepo').value;
+        const res = await fetch(`https://api.github.com/repos/${repo}/contents/${file}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
         if (!res.ok) return { sha: "", content: [] };
         const data = await res.json();
         return { sha: data.sha, content: JSON.parse(decodeURIComponent(escape(atob(data.content)))) };
     }
 
-    async function saveToGH(path, content, sha, msg) {
-        await fetch(`https://api.github.com/repos/${CONFIG.repo}/contents/${path}`, {
+    async function pushToGH(file, content, sha, msg) {
+        const token = document.getElementById('ghToken').value;
+        const repo = document.getElementById('ghRepo').value;
+        return fetch(`https://api.github.com/repos/${repo}/contents/${file}`, {
             method: 'PUT',
-            headers: { 'Authorization': `token ${CONFIG.token}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 message: msg,
                 content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
@@ -89,59 +97,59 @@
         });
     }
 
-    async function publishProduct() {
-        const status = document.getElementById('status');
-        status.style.display = "block"; status.innerText = "Wysyłanie...";
+    async function uploadProduct() {
+        const log = document.getElementById('status');
+        log.style.display = "block"; log.innerText = "Syncing with GitHub...";
         try {
-            const { sha, content } = await getGHFile('products.json');
-            const newProd = {
+            const { sha, content } = await getGHData('products.json');
+            const product = {
                 id: Date.now(),
                 name: document.getElementById('pName').value,
                 price: document.getElementById('pPrice').value,
                 stock: parseInt(document.getElementById('pStock').value),
                 colors: document.getElementById('pColors').value.split(',').map(c => c.trim()),
                 description: document.getElementById('pDesc').value,
-                images: uploadedImages
+                images: imagesBase64
             };
-            content.push(newProd);
-            await saveToGH('products.json', content, sha, "Add product");
-            status.style.background = "green"; status.innerText = "GOTOWE!";
+            content.push(product);
+            await pushToGH('products.json', content, sha, "Add " + product.name);
+            log.style.background = "green"; log.innerText = "SUCCESS: Product Live!";
             fetchList();
-        } catch (e) { status.style.background = "red"; status.innerText = "Błąd!"; }
+        } catch (e) { log.style.background = "red"; log.innerText = "Error!"; }
     }
 
-    async function updateOrder() {
-        const id = document.getElementById('trackID').value;
-        const status = document.getElementById('newStatus').value;
-        if(!id) return alert("Podaj ID!");
-        
-        try {
-            // Zakładamy, że trzymasz zamówienia w pliku orders.json na GitHubie
-            const { sha, content } = await getGHFile('orders.json');
-            const orderIdx = content.findIndex(o => o.id == id);
-            if(orderIdx > -1) {
-                content[orderIdx].status = status;
-                await saveToGH('orders.json', content, sha, "Update status");
-                alert("Status zaktualizowany!");
-            } else { alert("Nie znaleziono takiego zamówienia!"); }
-        } catch (e) { alert("Błąd aktualizacji statusu."); }
+    async function updateOrderStatus() {
+        const id = document.getElementById('orderID').value;
+        const status = document.getElementById('orderStatus').value;
+        const { sha, content } = await getGHData('orders.json');
+        const idx = content.findIndex(o => o.id == id);
+        if(idx > -1) {
+            content[idx].status = status;
+            await pushToGH('orders.json', content, sha, "Update Status " + id);
+            alert("Tracking Updated!");
+        } else {
+            // Create new order entry if ID doesn't exist
+            content.push({ id: id, status: status });
+            await pushToGH('orders.json', content, sha, "New Order Status " + id);
+            alert("New Tracking ID Created!");
+        }
     }
 
-    async function deleteProd(id) {
-        if(!confirm("Usunąć produkt?")) return;
-        const { sha, content } = await getGHFile('products.json');
+    async function deleteProduct(id) {
+        if(!confirm("Remove this item?")) return;
+        const { sha, content } = await getGHData('products.json');
         const filtered = content.filter(p => p.id !== id);
-        await saveToGH('products.json', filtered, sha, "Delete product");
+        await pushToGH('products.json', filtered, sha, "Remove item");
         fetchList();
     }
 
     async function fetchList() {
-        const { content } = await getGHFile('products.json');
-        document.getElementById('admin-product-list').innerHTML = content.map(p => `
-            <div class="prod-item">
-                <img src="${p.images[0]}" class="preview-img">
-                <div style="flex:1; margin-left:10px;">${p.name} (£${p.price})</div>
-                <button class="btn-del" onclick="deleteProd(${p.id})">USUŃ</button>
+        const { content } = await getGHData('products.json');
+        document.getElementById('inventory-list').innerHTML = content.map(p => `
+            <div class="item-row">
+                <img src="${p.images[0]}" class="img-pre">
+                <div style="flex:1; margin-left:15px;">${p.name} - £${p.price}</div>
+                <button class="btn-red" onclick="deleteProduct(${p.id})">DELETE</button>
             </div>
         `).join('');
     }
