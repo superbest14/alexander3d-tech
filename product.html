@@ -2,69 +2,57 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Details</title>
     <style>
-        :root { --main: #00d4ff; --bg: #0b0b0b; }
-        body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; padding-bottom: 120px; }
-        .main-img { width: 100%; border-radius: 20px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .price-tag { font-size: 2.5em; color: var(--main); font-weight: bold; margin: 20px 0; }
-        .btn-box { display: flex; gap: 15px; position: fixed; bottom: 90px; left: 0; width: 100%; padding: 20px; box-sizing: border-box; background: rgba(11,11,11,0.9); }
-        .btn { flex: 1; padding: 18px; border-radius: 12px; font-weight: bold; cursor: pointer; border: none; font-size: 1em; }
-        .btn-add { background: #222; color: var(--main); border: 2px solid var(--main); }
-        .btn-buy { background: var(--main); color: black; box-shadow: 0 0 20px rgba(0,212,255,0.4); }
-        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #121212; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; }
-        .tab-item { text-align: center; text-decoration: none; color: #888; font-size: 0.75em; flex: 1; }
+        body { background: #0b0b0b; color: white; font-family: sans-serif; padding: 20px; }
+        .btn-buy { background: #00d4ff; color: #000; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; }
+        select, input { background: #222; color: white; border: 1px solid #444; padding: 10px; width: 100%; border-radius: 5px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
-    <div id="product-page"></div>
-
-    <nav class="tab-bar">
-        <a href="index.html" class="tab-item"><span style="font-size:1.8em; display:block;">🏠</span>HOME</a>
-        <a href="order.html" class="tab-item"><span style="font-size:1.8em; display:block;">🛒</span>CART</a>
-        <a href="profile.html" class="tab-item"><span style="font-size:1.8em; display:block;">👤</span>PROFILE</a>
-    </nav>
-
+    <div id="product-details"></div>
 <script>
     const id = new URLSearchParams(window.location.search).get('id');
-    const products = JSON.parse(localStorage.getItem('products')) || [];
-    const p = products[id];
+    
+    async function load() {
+        const res = await fetch('products.json');
+        const products = await res.json();
+        const p = products[id];
 
-    if(p) {
-        document.getElementById('product-page').innerHTML = `
-            <img src="${p.images[0]}" class="main-img">
-            <h1 style="margin-top:25px;">${p.name}</h1>
-            <p style="color:#888; line-height:1.6;">${p.description}</p>
-            <div class="price-tag">£${p.price}</div>
-            <div class="btn-box">
-                <button class="btn btn-add" onclick="addToCart()">ADD TO CART</button>
-                <button class="btn btn-buy" onclick="buyNow()">BUY NOW</button>
-            </div>
+        document.getElementById('product-details').innerHTML = `
+            <img src="${p.images[0]}" style="width:100%; border-radius:15px;">
+            <h1>${p.name}</h1>
+            <div style="font-size:2em; color:#00d4ff">£${p.price}</div>
+            
+            <p>Select Color:</p>
+            <select id="selectedColor">
+                ${p.colors.map(c => `<option value="${c}">${c}</option>`).join('')}
+            </select>
+
+            <p>Quantity (Max ${p.stock}):</p>
+            <input type="number" id="selectedQty" value="1" min="1" max="${p.stock}">
+
+            <button class="btn-buy" onclick="addToCart()">ADD TO CART</button>
         `;
+        window.currentProduct = p;
     }
 
     function addToCart() {
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        cart.push({ ...p, cartId: Date.now() }); // Unikalne ID dla koszyka
-        localStorage.setItem('cart', JSON.stringify(cart));
+        const color = document.getElementById('selectedColor').value;
+        const qty = document.getElementById('selectedQty').value;
         
-        // Animacja przycisku
-        const btn = document.querySelector('.btn-add');
-        btn.innerText = "✓ ADDED";
-        btn.style.borderColor = "#28a745";
-        btn.style.color = "#28a745";
-        setTimeout(() => {
-            btn.innerText = "ADD TO CART";
-            btn.style.borderColor = "var(--main)";
-            btn.style.color = "var(--main)";
-        }, 1500);
+        cart.push({
+            ...window.currentProduct,
+            chosenColor: color,
+            chosenQty: qty,
+            cartId: Date.now()
+        });
+        
+        localStorage.setItem('cart', JSON.stringify(cart));
+        alert("Added to cart, Proszę Pana!");
     }
-
-    function buyNow() {
-        addToCart();
-        window.location.href = 'order.html';
-    }
+    load();
 </script>
 </body>
 </html>
