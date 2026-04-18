@@ -1,74 +1,80 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<title>Admin Alexander 3D</title>
-<style>
-body { background: #111; color: #00d4ff; font-family: sans-serif; padding: 20px; }
-.form-box { background: #222; padding: 20px; border-radius: 15px; max-width: 500px; margin-bottom: 30px; }
-input { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; }
-#preview { width: 100%; height: 200px; border: 2px dashed #444; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; overflow: hidden; }
-#preview img { width: 100%; height: 100%; object-fit: cover; }
-.btn { background: #28a745; color: #fff; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; }
-.product-item { border-bottom: 1px solid #333; padding: 10px; display: flex; justify-content: space-between; }
-</style>
+    <meta charset="UTF-8">
+    <title>Admin Alexander 3D</title>
+    <style>
+        body { background: #111; color: #00d4ff; font-family: sans-serif; padding: 20px; }
+        .admin-section { background: #222; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; }
+        button { background: #28a745; color: white; border: none; padding: 15px; width: 100%; cursor: pointer; }
+    </style>
 </head>
 <body>
-<h1>Panel Admina (Dodaj Produkt)</h1>
+    <h1>ADMIN PANEL</h1>
 
-<div class="form-box">
-<div id="preview">Click to upload photo (Vinted style)</div>
-<input type="file" id="photoInput" accept="image/*" style="display:none">
-<button onclick="document.getElementById('photoInput').click()" style="margin-bottom:10px;">WYBIERZ ZDJĘCIE</button>
+    <div class="admin-section">
+        <h3>Add New Product</h3>
+        <input type="text" id="pName" placeholder="Product Name">
+        <textarea id="pDesc" placeholder="Description"></textarea>
+        <input type="number" id="pPrice" placeholder="Price £">
+        <input type="text" id="pShip" placeholder="Shipping Price (0 = Free)">
+        <input type="file" id="pFiles" multiple accept="image/*">
+        <button onclick="addProduct()">PUBLISH PRODUCT</button>
+    </div>
 
-<input type="text" id="pName" placeholder="Nazwa produktu (np. Drone Frame)">
-<input type="number" id="pPrice" placeholder="Cena (£)">
-<button class="btn" onclick="saveProduct()">DODAJ PRODUKT DO SKLEPU</button>
-</div>
-
-<h2>Twoje Produkty:</h2>
-<div id="admin-list"></div>
+    <div class="admin-section">
+        <h3>Update Order Status</h3>
+        <input type="text" id="oid" placeholder="Order ID (e.g. AT-...)">
+        <select id="ostatus">
+            <option value="Manufacturing (Produkowanie)">Manufacturing</option>
+            <option value="Packing (Pakowanie)">Packing</option>
+            <option value="Shipped (Wysłane)">Shipped</option>
+            <option value="In Transit (Kurier ma paczkę)">In Transit</option>
+            <option value="Delayed (Opóźnienia - przyjdzie jutro)">Delayed</option>
+            <option value="Delivered (Dostarczone)">Delivered</option>
+        </select>
+        <input type="text" id="otime" placeholder="Delivery time (e.g. Today 2:00 PM - 4:00 PM)">
+        <button onclick="updateOrder()" style="background:#007bff">UPDATE TRACKING</button>
+    </div>
 
 <script>
-let currentImage = "";
+    let images = [];
+    document.getElementById('pFiles').onchange = e => {
+        const files = e.target.files;
+        for(let f of files) {
+            let reader = new FileReader();
+            reader.onload = r => images.push(r.target.result);
+            reader.readAsDataURL(f);
+        }
+    };
 
-// Obsługa zdjęcia jak na Vinted
-document.getElementById('photoInput').onchange = e => {
-const reader = new FileReader();
-reader.onload = () => {
-currentImage = reader.result;
-document.getElementById('preview').innerHTML = `<img src="${currentImage}">`;
-};
-reader.readAsDataURL(e.target.files[0]);
-};
+    function addProduct() {
+        let p = {
+            name: document.getElementById('pName').value,
+            description: document.getElementById('pDesc').value,
+            price: document.getElementById('pPrice').value,
+            shipping: document.getElementById('pShip').value,
+            images: images,
+            soldOut: false
+        };
+        let products = JSON.parse(localStorage.getItem('products')) || [];
+        products.push(p);
+        localStorage.setItem('products', JSON.stringify(products));
+        alert("Product Added!");
+    }
 
-function saveProduct() {
-const name = document.getElementById('pName').value;
-const price = document.getElementById('pPrice').value;
-if(!name || !price || !currentImage) return alert("Wypełnij wszystko!");
-
-const products = JSON.parse(localStorage.getItem('products')) || [];
-products.push({ name, price, image: currentImage, lastOrderId: "AT-"+Math.floor(1000+Math.random()*9000) });
-localStorage.setItem('products', JSON.stringify(products));
-
-alert("Dodano! Teraz odśwież stronę główną.");
-location.reload();
-}
-
-function deleteProduct(index) {
-const products = JSON.parse(localStorage.getItem('products')) || [];
-products.splice(index, 1);
-localStorage.setItem('products', JSON.stringify(products));
-location.reload();
-}
-
-const products = JSON.parse(localStorage.getItem('products')) || [];
-document.getElementById('admin-list').innerHTML = products.map((p, i) => `
-<div class="product-item">
-<span>${p.name} - £${p.price}</span>
-<button onclick="deleteProduct(${i})" style="color:red; background:none; border:none;">Usuń</button>
-</div>
-`).join('');
+    function updateOrder() {
+        let id = document.getElementById('oid').value;
+        let orders = JSON.parse(localStorage.getItem('orders')) || [];
+        let o = orders.find(x => x.id === id);
+        if(o) {
+            o.status = document.getElementById('ostatus').value;
+            o.deliveryTime = document.getElementById('otime').value;
+            localStorage.setItem('orders', JSON.stringify(orders));
+            alert("Status Updated!");
+        }
+    }
 </script>
 </body>
 </html>
