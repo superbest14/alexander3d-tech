@@ -2,111 +2,59 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alexander 3D | Admin</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <title>Admin Auto-Sync</title>
     <style>
-        :root { --main: #00d4ff; --bg: #0b0b0b; }
-        body { background: var(--bg); color: white; font-family: sans-serif; padding: 20px; }
-        .box { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; }
-        .btn { background: var(--main); color: black; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-test { background: #ffa500; margin-bottom: 15px; }
-        .item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #333; align-items: center; }
-        .del-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        body { background: #0b0b0b; color: white; font-family: sans-serif; padding: 20px; }
+        input, button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: none; }
+        button { background: #00d4ff; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h1>Alexander 3D - Control Panel</h1>
+    <h2>Alexander 3D Sync</h2>
+    <input type="password" id="token" placeholder="Paste GitHub Token Here">
+    <input type="text" id="pName" placeholder="Product Name">
+    <input type="number" id="pPrice" placeholder="Price £">
+    <input type="file" id="pFile" accept="image/*">
+    <button onclick="uploadToCloud()">PUSH TO ALL UK DEVICES</button>
 
-    <div class="box">
-        <h3>System Check</h3>
-        <button class="btn btn-test" onclick="testDB()">Step 1: Test Connection</button>
-        <div id="test-status" style="font-size: 0.8em; color: #888;">Not tested</div>
-    </div>
+    <script>
+        let imgBase64 = "";
+        document.getElementById('pFile').onchange = e => {
+            const r = new FileReader();
+            r.onload = () => imgBase64 = r.result;
+            r.readAsDataURL(e.target.files[0]);
+        };
 
-    <div class="box">
-        <h3>Step 2: Add New Product</h3>
-        <input type="text" id="pName" placeholder="Product Name">
-        <input type="number" id="pPrice" placeholder="Price £">
-        <input type="file" id="pFile" accept="image/*">
-        <button class="btn" onclick="uploadProduct()">Add to Shop</button>
-    </div>
+        async function uploadToCloud() {
+            const token = document.getElementById('token').value;
+            const repo = "PanaNazwa/PanaRepo"; // Tu wpisać nazwę konta i repozytorium
+            const path = "data.json";
+            const url = `https://api.github.com/repos/${repo}/contents/${path}`;
 
-    <div class="box">
-        <h3>Step 3: Update Order Tracking</h3>
-        <input type="text" id="orderID" placeholder="Order ID (e.g. AT-1234)">
-        <select id="day">
-            <option value="Today">Today</option>
-            <option value="Tomorrow">Tomorrow</option>
-        </select>
-        <div style="display:flex; gap:10px; align-items:center;">
-            Between <input type="time" id="t1"> to <input type="time" id="t2">
-        </div>
-        <button class="btn" style="background:#28a745; color:white;" onclick="updateTracking()">Update Tracking</button>
-    </div>
+            // 1. Pobierz starą zawartość
+            const res = await fetch(url);
+            const fileData = await res.json();
+            let currentContent = JSON.parse(atob(fileData.content));
 
-    <div class="box">
-        <h3>Live Inventory</h3>
-        <div id="list"></div>
-    </div>
+            // 2. Dodaj nowy produkt
+            currentContent.push({
+                name: document.getElementById('pName').value,
+                price: document.getElementById('pPrice').value,
+                image: imgBase64
+            });
 
-<script>
-    const firebaseConfig = { databaseURL: "https://console.firebase.google.com/u/1/project/alexander3d-923d0/database/alexander3d-923d0-default-rtdb/data/~2F" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let imgData = "";
-    document.getElementById('pFile').onchange = e => {
-        const r = new FileReader();
-        r.onload = res => imgData = res.target.result;
-        r.readAsDataURL(e.target.files[0]);
-    };
-
-    async function testDB() {
-        const status = document.getElementById('test-status');
-        try {
-            await db.ref('connection_check').set(Date.now());
-            status.innerText = "Connected! Database is working.";
-            status.style.color = "#28a745";
-        } catch(e) {
-            status.innerText = "Error: " + e.message;
-            status.style.color = "red";
+            // 3. Wyślij nową wersję (Automatyczny Commit)
+            await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: "Update Shop Data",
+                    content: btoa(JSON.stringify(currentContent)),
+                    sha: fileData.sha
+                })
+            });
+            alert("Updated! Everyone in the UK can see it now.");
         }
-    }
-
-    function uploadProduct() {
-        const name = document.getElementById('pName').value;
-        const price = document.getElementById('pPrice').value;
-        if(!name || !imgData) return alert("Please fill all fields!");
-
-        db.ref('products').push({ name, price, image: imgData })
-        .then(() => { alert("Product added!"); document.getElementById('pName').value = ""; });
-    }
-
-    function updateTracking() {
-        const id = document.getElementById('orderID').value;
-        const day = document.getElementById('day').value;
-        const time = document.getElementById('t1').value + " - " + document.getElementById('t2').value;
-        if(!id) return alert("Enter Order ID!");
-
-        db.ref('tracking/' + id).set({ day, time })
-        .then(() => alert("Tracking live for " + id));
-    }
-
-    db.ref('products').on('value', snap => {
-        const data = snap.val();
-        const container = document.getElementById('list');
-        container.innerHTML = "";
-        for(let key in data) {
-            container.innerHTML += `
-                <div class="item">
-                    <span>${data[key].name} (£${data[key].price})</span>
-                    <button class="del-btn" onclick="db.ref('products/${key}').remove()">Delete</button>
-                </div>`;
-        }
-    });
-</script>
+    </script>
 </body>
 </html>
