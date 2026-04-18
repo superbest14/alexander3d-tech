@@ -1,58 +1,218 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alexander 3D Tech</title>
+    <title>Alexander 3D Tech | Engineering Excellence</title>
     <style>
-        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; --text: #eee; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
-        .card { background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid #333; cursor: pointer; transition: 0.3s; }
-        .card:hover { border-color: var(--main); }
-        .card img { width: 100%; height: 220px; object-fit: cover; }
-        .card-info { padding: 15px; }
-        .price { font-size: 1.5em; color: var(--main); font-weight: bold; }
-        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #121212; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 1000; }
-        .tab-item { text-align: center; text-decoration: none; color: #888; font-size: 0.75em; flex: 1; }
+        :root { 
+            --main: #00d4ff; 
+            --bg: #0b0b0b; 
+            --card: #161616; 
+            --text: #eee; 
+            --nav: #121212; 
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding-bottom: 90px; 
+            overflow-x: hidden;
+        }
+
+        /* Nagłówek */
+        .header { 
+            text-align: center; 
+            padding: 60px 20px; 
+            background: linear-gradient(180deg, #111 0%, var(--bg) 100%);
+            border-bottom: 1px solid #333;
+        }
+
+        .header h1 { 
+            margin: 0; 
+            font-size: 2.5em; 
+            letter-spacing: 5px; 
+            color: var(--main); 
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        /* Sekcja Trackingu na stronie głównej */
+        .quick-track {
+            background: var(--card);
+            margin: -30px 20px 30px 20px;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid var(--main);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .track-input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .track-input-group input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #000;
+            color: white;
+        }
+
+        .track-btn {
+            background: var(--main);
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Grid Produktów */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 25px; 
+            padding: 20px; 
+        }
+
+        .card { 
+            background: var(--card); 
+            border-radius: 20px; 
+            overflow: hidden; 
+            border: 1px solid #333; 
+            transition: 0.3s; 
+            cursor: pointer;
+        }
+
+        .card:hover { 
+            transform: translateY(-5px); 
+            border-color: var(--main); 
+            box-shadow: 0 10px 20px rgba(0, 212, 255, 0.2);
+        }
+
+        .card img { width: 100%; height: 250px; object-fit: cover; }
+        
+        .card-info { padding: 20px; }
+        .card-info h3 { margin: 0; font-size: 1.2em; }
+        .price { 
+            font-size: 1.6em; 
+            color: var(--main); 
+            font-weight: bold; 
+            margin-top: 10px; 
+        }
+
+        /* Pasek Nawigacji */
+        .tab-bar { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            background: var(--nav); 
+            display: flex; 
+            justify-content: space-around; 
+            padding: 15px 0; 
+            border-top: 1px solid #333; 
+            z-index: 1000; 
+        }
+
+        .tab-item { 
+            text-align: center; 
+            text-decoration: none; 
+            color: #888; 
+            font-size: 0.7em; 
+            flex: 1; 
+        }
+
         .tab-item.active { color: var(--main); }
+        .tab-icon { font-size: 1.8em; display: block; margin-bottom: 4px; }
+
+        .status-msg { text-align: center; color: #666; padding: 50px; }
     </style>
 </head>
 <body>
-    <div style="text-align:center; padding: 30px;">
-        <h1 style="color:var(--main); letter-spacing:3px;">ALEXANDER 3D</h1>
+
+    <div class="header">
+        <h1>ALEXANDER 3D</h1>
+        <p style="color: #666; margin-top: 10px;">Advanced Mechanical Engineering</p>
     </div>
-    
-    <div class="grid" id="main-grid"></div>
+
+    <div class="quick-track">
+        <strong style="color: var(--main);">TRACK YOUR ORDER</strong>
+        <div class="track-input-group">
+            <input type="text" id="mainTrackInput" placeholder="Wpisz Order ID (np. AT-7492)">
+            <button class="track-btn" onclick="goToTracking()">CHECK</button>
+        </div>
+    </div>
+
+    <div class="grid" id="main-grid">
+        <div class="status-msg">Łączenie z bazą danych...</div>
+    </div>
 
     <nav class="tab-bar">
-        <a href="index.html" class="tab-item active">🏠<br>HOME</a>
-        <a href="order.html" class="tab-item">🛒<br>CART</a>
-        <a href="profile.html" class="tab-item">👤<br>PROFILE</a>
+        <a href="index.html" class="tab-item active"><span class="tab-icon">🏠</span>HOME</a>
+        <a href="order.html" class="tab-item"><span class="tab-icon">🛒</span>CART</a>
+        <a href="profile.html" class="tab-item"><span class="tab-icon">👤</span>PROFILE</a>
     </nav>
 
 <script>
+    // Funkcja do śledzenia przesyłki
+    function goToTracking() {
+        const id = document.getElementById('mainTrackInput').value;
+        if(id) {
+            window.location.href = `tracking.html?id=${id}`;
+        } else {
+            alert("Proszę Pana, proszę wpisać numer zamówienia!");
+        }
+    }
+
+    // Funkcja ładowania produktów z pliku JSON (Globalnie dla każdego)
     async function loadGlobalProducts() {
+        const grid = document.getElementById('main-grid');
         try {
-            // POBIERANIE Z PLIKU JSON NA GITHUBIE
+            // Pobieramy plik products.json z Twojego GitHuba/Vercela
             const response = await fetch('products.json');
+            
+            if (!response.ok) throw new Error("Plik products.json nie został znaleziony.");
+            
             const products = await response.json();
-            const grid = document.getElementById('main-grid');
-            grid.innerHTML = products.map((p, i) => `
-                <div class="card" onclick="window.location.href='product.html?id=${i}'">
-                    <img src="${p.images[0]}">
+
+            if (products.length === 0) {
+                grid.innerHTML = "<div class='status-msg'>Obecnie brak produktów w sklepie.</div>";
+                return;
+            }
+
+            // Generujemy karty produktów
+            grid.innerHTML = products.map((p, index) => `
+                <div class="card" onclick="window.location.href='product.html?id=${index}'">
+                    <img src="${p.images ? p.images[0] : 'https://via.placeholder.com/300'}">
                     <div class="card-info">
-                        <strong>${p.name}</strong>
+                        <h3>${p.name}</h3>
+                        <div style="font-size: 0.8em; color: #888; margin-top: 5px;">${p.colors ? p.colors.join(' | ') : ''}</div>
                         <div class="price">£${p.price}</div>
-                        <div style="font-size:0.8em; color:#666">Available: ${p.stock > 0 ? p.stock + ' pcs' : 'SOLD OUT'}</div>
                     </div>
                 </div>
             `).join('');
-        } catch (e) {
-            console.error("Błąd ładowania JSON. Upewnij się, że plik products.json jest na GitHubie.");
+
+        } catch (error) {
+            console.error("Błąd ładowania:", error);
+            grid.innerHTML = `
+                <div class='status-msg'>
+                    <p>Błąd połączenia z bazą globalną.</p>
+                    <small style="color: #444;">Upewnij się, że opublikowałeś plik products.json na GitHubie.</small>
+                </div>`;
         }
     }
-    loadGlobalProducts();
+
+    // Uruchom ładowanie po starcie strony
+    window.onload = loadGlobalProducts;
 </script>
+
 </body>
 </html>
