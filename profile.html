@@ -5,46 +5,115 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile | Alexander 3D</title>
     <style>
-        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; }
-        body { font-family: sans-serif; background: var(--bg); color: white; padding: 20px; }
-        .order-card { background: var(--card); border: 1px solid #333; padding: 15px; border-radius: 12px; margin-bottom: 10px; }
-        .track-btn { background: var(--main); color: black; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; float: right; font-weight: bold; text-decoration: none; font-size: 0.8em; }
-        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #121212; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; }
-        .tab-item { text-align: center; text-decoration: none; color: #888; font-size: 0.7em; flex: 1; }
+        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; --text: #eee; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; padding-bottom: 100px; }
+        
+        .profile-header { text-align: center; padding: 30px 0; border-bottom: 1px solid #333; margin-bottom: 20px; }
+        .avatar { width: 80px; height: 80px; background: #333; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 2em; border: 2px solid var(--main); }
+        
+        h2 { color: var(--main); font-size: 1.2em; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Orders Section */
+        .order-card { background: var(--card); border-radius: 15px; padding: 20px; margin-bottom: 15px; border: 1px solid #333; position: relative; transition: 0.3s; }
+        .order-card:hover { border-color: var(--main); }
+        .order-id { font-weight: bold; color: var(--main); display: block; margin-bottom: 5px; }
+        
+        /* Tracking Info Styling */
+        .tracking-box { margin-top: 15px; padding-top: 15px; border-top: 1px solid #444; }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 5px; font-size: 0.75em; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
+        .status-processing { background: #555; color: white; }
+        .status-shipping { background: #28a745; color: white; box-shadow: 0 0 10px rgba(40, 167, 69, 0.4); }
+        
+        .arrival-info { font-size: 0.9em; color: #bbb; }
+        .arrival-info b { color: #fff; }
+
+        /* Navigation Bar */
+        .nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #111; display: flex; padding: 15px 0; border-top: 1px solid #333; z-index: 1000; }
+        .nav-a { flex: 1; text-align: center; text-decoration: none; color: #555; font-size: 0.8em; }
+        .active { color: var(--main); }
     </style>
 </head>
 <body>
 
-    <h1>My Profile</h1>
-    <h3>Bought Items</h3>
-    <div id="bought-list"></div>
+    <div class="profile-header">
+        <div class="avatar">👤</div>
+        <div id="user-name" style="font-weight: bold; font-size: 1.2em;">Customer</div>
+        <div style="font-size: 0.8em; color: #666;">Alexander 3D Member</div>
+    </div>
 
-    <nav class="tab-bar">
-        <a href="index.html" class="tab-item">🏠<br>HOME</a>
-        <a href="order.html" class="tab-item">🛒<br>CART</a>
-        <a href="profile.html" class="tab-item" style="color:var(--main)">👤<br>PROFILE</a>
+    <section>
+        <h2>My Orders & Tracking</h2>
+        <div id="bought-list">
+            <p style="text-align:center; color:#444; margin-top:40px;">No orders found yet.</p>
+        </div>
+    </section>
+
+    <nav class="nav">
+        <a href="index.html" class="nav-a">🏠<br>HOME</a>
+        <a href="order.html" class="nav-a">🛒<br>CART</a>
+        <a href="profile.html" class="nav-a active">👤<br>PROFILE</a>
     </nav>
 
 <script>
-    async function loadOrders() {
-        const container = document.getElementById('bought-list');
-        try {
-            // Pulling status from the global orders.json configured in admin
-            const res = await fetch('orders.json');
-            const orders = await res.json();
+    function loadProfileData() {
+        const boughtList = document.getElementById('bought-list');
+        
+        // 1. Pobieramy zamówienia zapisane lokalnie przez klienta po zakupie
+        const myOrders = JSON.parse(localStorage.getItem('my_orders')) || [];
+        
+        // 2. Pobieramy dane trackingowe, które Pan (Admin) wkleił do index.html
+        // (Dane te są przekazywane przez localStorage.setItem('global_tracking', ...) w index.html)
+        const globalTracking = JSON.parse(localStorage.getItem('global_tracking')) || [];
 
-            container.innerHTML = orders.map(o => `
+        if (myOrders.length === 0) return;
+
+        boughtList.innerHTML = myOrders.reverse().map(order => {
+            // Szukamy, czy dla tego Order ID istnieje wpis o dostawie od Admina
+            const liveTrack = globalTracking.find(t => t.id === order.id);
+            
+            let statusHTML = '';
+            
+            if (liveTrack) {
+                // Jeśli Admin ustawił godzinę
+                statusHTML = `
+                    <div class="tracking-box">
+                        <span class="status-badge status-shipping">Out for Delivery</span>
+                        <div class="arrival-info">
+                            Estimated Arrival: <b>${liveTrack.day}</b><br>
+                            Time Slot: <b>Between ${liveTrack.time}</b>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Jeśli zamówienie jest nowe i Admin jeszcze go nie przetworzył
+                statusHTML = `
+                    <div class="tracking-box">
+                        <span class="status-badge status-processing">Processing Order</span>
+                        <div class="arrival-info">Your delivery time will appear here soon.</div>
+                    </div>
+                `;
+            }
+
+            return `
                 <div class="order-card">
-                    <a href="tracking.html?id=${o.id}" class="track-btn">TRACK PARCEL</a>
-                    <strong>Order ID: ${o.id}</strong><br>
-                    <span style="color:#888;">Status: ${o.status}</span>
+                    <span class="order-id">Order #${order.id}</span>
+                    <div style="font-size:0.8em; color:#888;">
+                        Date: ${new Date().toLocaleDateString()}<br>
+                        Items: ${order.items ? order.items.length : 1}
+                    </div>
+                    ${statusHTML}
                 </div>
-            `).join('');
-        } catch (e) {
-            container.innerHTML = "<p>No orders found.</p>";
+            `;
+        }).join('');
+
+        // Ustawienie imienia jeśli zostało podane przy zamówieniu
+        if(myOrders.length > 0) {
+            document.getElementById('user-name').innerText = myOrders[0].customer;
         }
     }
-    loadOrders();
+
+    window.onload = loadProfileData;
 </script>
+
 </body>
 </html>
