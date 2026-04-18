@@ -3,83 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alexander 3D Tech | Global Store</title>
+    <title>Alexander 3D Tech</title>
     <style>
-        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; --text: #eee; --nav-bg: #121212; }
+        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; --text: #eee; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; }
-        .header { text-align: center; padding: 50px 20px; background: #111; border-bottom: 2px solid var(--main); }
-        .header h1 { margin: 0; letter-spacing: 4px; color: var(--main); text-shadow: 0 0 15px var(--main); }
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding: 25px; }
-        .card { background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid #333; transition: 0.3s; cursor: pointer; position: relative; }
-        .card:hover { border-color: var(--main); transform: translateY(-5px); }
-        .card img { width: 100%; height: 230px; object-fit: cover; }
-        .card-info { padding: 18px; }
-        .price { font-size: 1.6em; color: var(--main); font-weight: bold; margin-top: 10px; }
-
-        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 1000; }
-        .tab-item { text-align: center; text-decoration: none; color: #888; font-size: 0.75em; flex: 1; position: relative; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
+        .card { background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid #333; cursor: pointer; transition: 0.3s; }
+        .card:hover { border-color: var(--main); }
+        .card img { width: 100%; height: 220px; object-fit: cover; }
+        .card-info { padding: 15px; }
+        .price { font-size: 1.5em; color: var(--main); font-weight: bold; }
+        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #121212; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 1000; }
+        .tab-item { text-align: center; text-decoration: none; color: #888; font-size: 0.75em; flex: 1; }
         .tab-item.active { color: var(--main); }
-        .tab-icon { font-size: 1.8em; display: block; margin-bottom: 3px; }
-        .cart-badge { position: absolute; top: -5px; right: 25%; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.8em; font-weight: bold; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h1>ALEXANDER 3D TECH</h1>
-        <p>Premium 3D Engineering & Custom Parts</p>
+    <div style="text-align:center; padding: 30px;">
+        <h1 style="color:var(--main); letter-spacing:3px;">ALEXANDER 3D</h1>
     </div>
-
-    <div class="grid" id="main-grid">
-        </div>
+    
+    <div class="grid" id="main-grid"></div>
 
     <nav class="tab-bar">
-        <a href="index.html" class="tab-item active"><span class="tab-icon">🏠</span>HOME</a>
-        <a href="order.html" class="tab-item">
-            <span class="tab-icon">🛒</span>CART
-            <span id="cart-count" class="cart-badge" style="display:none">0</span>
-        </a>
-        <a href="profile.html" class="tab-item"><span class="tab-icon">👤</span>PROFILE</a>
+        <a href="index.html" class="tab-item active">🏠<br>HOME</a>
+        <a href="order.html" class="tab-item">🛒<br>CART</a>
+        <a href="profile.html" class="tab-item">👤<br>PROFILE</a>
     </nav>
 
 <script>
-    // System ładowania produktów (aby były widoczne wszędzie)
-    async function fetchProducts() {
-        // Na ten moment używamy LocalStorage, ale poniżej przygotowałem Panu 
-        // miejsce na połączenie z bazą danych (np. GitHub JSON).
-        const products = JSON.parse(localStorage.getItem('products')) || [];
-        const grid = document.getElementById('main-grid');
-        
-        if (products.length === 0) {
-            grid.innerHTML = '<p style="text-align:center; width:100%; color:#555;">No products available online yet.</p>';
-            return;
-        }
-
-        grid.innerHTML = products.map((p, i) => `
-            <div class="card" onclick="window.location.href='product.html?id=${i}'">
-                <img src="${p.images ? p.images[0] : ''}">
-                <div class="card-info">
-                    <div style="font-weight:bold; font-size: 1.2em;">${p.name}</div>
-                    <div class="price">£${p.price}</div>
+    async function loadGlobalProducts() {
+        try {
+            // POBIERANIE Z PLIKU JSON NA GITHUBIE
+            const response = await fetch('products.json');
+            const products = await response.json();
+            const grid = document.getElementById('main-grid');
+            grid.innerHTML = products.map((p, i) => `
+                <div class="card" onclick="window.location.href='product.html?id=${i}'">
+                    <img src="${p.images[0]}">
+                    <div class="card-info">
+                        <strong>${p.name}</strong>
+                        <div class="price">£${p.price}</div>
+                        <div style="font-size:0.8em; color:#666">Available: ${p.stock > 0 ? p.stock + ' pcs' : 'SOLD OUT'}</div>
+                    </div>
                 </div>
-            </div>
-        `).join('');
-    }
-
-    function updateCartCount() {
-        const cart = JSON.parse(localStorage.getItem('cart')) || [];
-        const badge = document.getElementById('cart-count');
-        if (cart.length > 0) {
-            badge.style.display = 'block';
-            badge.innerText = cart.length;
+            `).join('');
+        } catch (e) {
+            console.error("Błąd ładowania JSON. Upewnij się, że plik products.json jest na GitHubie.");
         }
     }
-
-    window.onload = () => {
-        fetchProducts();
-        updateCartCount();
-    }
+    loadGlobalProducts();
 </script>
 </body>
 </html>
