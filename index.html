@@ -2,65 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alexander 3D Tech</title>
+    <title>Alexander 3D Admin</title>
     <style>
-        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; }
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; padding-bottom: 80px; }
-        .hero { text-align: center; padding: 40px; border-bottom: 1px solid #333; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
-        .card { background: var(--card); border-radius: 15px; border: 1px solid #333; overflow: hidden; }
-        .card img { width: 100%; height: 150px; object-fit: cover; }
-        .card-info { padding: 10px; }
-        .price { color: var(--main); font-weight: bold; }
-        .nav { position: fixed; bottom: 0; width: 100%; background: #111; display: flex; padding: 15px 0; border-top: 1px solid #333; }
-        .nav-item { flex: 1; text-align: center; text-decoration: none; color: #777; font-size: 0.8em; }
-        .active { color: var(--main); }
+        body { background: #0b0b0b; color: white; font-family: sans-serif; padding: 20px; }
+        .box { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; }
+        .btn { background: #00d4ff; color: black; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        #result { background: #000; color: #0f0; padding: 15px; border: 1px solid #0f0; display: none; margin-top: 10px; font-family: monospace; font-size: 11px; word-break: break-all; }
     </style>
 </head>
 <body>
+    <h2>Product & Tracking Generator</h2>
 
-    <div class="hero">
-        <h1 style="color:var(--main); letter-spacing:3px;">ALEXANDER 3D</h1>
+    <div class="box">
+        <h3>1. New Product</h3>
+        <input type="text" id="pN" placeholder="Name">
+        <input type="number" id="pP" placeholder="Price £">
+        <input type="file" id="pF" accept="image/*">
+        <button class="btn" onclick="genP()">GENERATE PRODUCT LINE</button>
     </div>
 
-    <div class="grid" id="product-grid"></div>
+    <div class="box">
+        <h3>2. Delivery Status</h3>
+        <input type="text" id="oID" placeholder="Order ID">
+        <select id="oD">
+            <option value="Today">Today</option>
+            <option value="Tomorrow">Tomorrow</option>
+        </select>
+        Between <input type="time" id="t1"> and <input type="time" id="t2">
+        <button class="btn" style="background:#28a745; color:white;" onclick="genT()">GENERATE TRACKING LINE</button>
+    </div>
 
-    <nav class="nav">
-        <a href="#" class="nav-item active">🏠<br>HOME</a>
-        <a href="order.html" class="nav-item">🛒<br>CART</a>
-        <a href="profile.html" class="nav-item">👤<br>PROFILE</a>
-    </nav>
+    <div id="result"></div>
 
-    <script>
-        // --- DATA SECTION (EASY TO EDIT) ---
-        // Just paste new lines here from the Admin Panel
-        const PRODUCTS = [
-            // Example: { name: "Sample", price: "20", colors: ["Red"], images: ["data:image..."] },
-        ];
+<script>
+    let img = "";
+    document.getElementById('pF').onchange = e => {
+        let r = new FileReader();
+        r.onload = res => img = res.target.result;
+        r.readAsDataURL(e.target.files[0]);
+    };
 
-        const ORDERS = [
-            // Example: { id: "AT-1234", day: "Tomorrow", time: "14:00 - 16:00" },
-        ];
-        // ------------------------------------
+    function genP() {
+        const line = `{ n: "${document.getElementById('pN').value}", p: "${document.getElementById('pP').value}", img: "${img}" },`;
+        show(line);
+    }
 
-        function loadProducts() {
-            const grid = document.getElementById('product-grid');
-            if(PRODUCTS.length === 0) {
-                grid.innerHTML = "<p style='grid-column: 1/3; text-align:center;'>Welcome! New products coming soon.</p>";
-                return;
-            }
-            grid.innerHTML = PRODUCTS.map((p, i) => `
-                <div class="card" onclick="location.href='product.html?id=${i}'">
-                    <img src="${p.images[0]}">
-                    <div class="card-info">
-                        <strong>${p.name}</strong><br>
-                        <span class="price">£${p.price}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-        window.onload = loadProducts;
-    </script>
+    function genT() {
+        const line = `{ id: "${document.getElementById('oID').value}", day: "${document.getElementById('oD').value}", time: "${document.getElementById('t1').value} - ${document.getElementById('t2').value}" },`;
+        show(line);
+    }
+
+    function show(txt) {
+        const r = document.getElementById('result');
+        r.style.display = "block";
+        r.innerText = "https://console.firebase.google.com/u/1/project/alexander3d-923d0/database/alexander3d-923d0-default-rtdb/data/~2F" + txt;
+    }
+</script>
 </body>
 </html>
