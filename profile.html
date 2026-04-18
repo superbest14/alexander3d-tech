@@ -2,28 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | Alexander 3D</title>
     <style>
-        body { background: #0b0b0b; color: white; font-family: sans-serif; padding: 20px; }
-        .order-card { background: #1a1a1a; padding: 20px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid #00d4ff; }
-        .status { font-weight: bold; color: #00d4ff; }
+        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; --text: #eee; --nav-bg: #121212; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; }
+        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--nav-bg); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 1000; }
+        .tab-item { text-align: center; text-decoration: none; color: #888; font-size: 0.75em; flex: 1; }
+        .tab-item.active { color: var(--main); }
+        .tab-icon { font-size: 1.8em; display: block; margin-bottom: 3px; }
+
+        .profile-header { padding: 40px 20px; text-align: center; border-bottom: 1px solid #333; }
+        .avatar { width: 80px; height: 80px; background: var(--main); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2em; color: #000; font-weight: bold; }
+
+        .section-title { padding: 20px; font-weight: bold; color: var(--main); text-transform: uppercase; font-size: 0.9em; }
+        .order-card { background: var(--card); margin: 0 20px 15px; padding: 15px; border-radius: 12px; border: 1px solid #333; }
+        .status-pill { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.8em; font-weight: bold; margin-top: 10px; }
+        .status-placed { background: rgba(0, 212, 255, 0.2); color: var(--main); }
+        .status-delivered { background: rgba(40, 167, 69, 0.2); color: #28a745; }
+        .track-btn { float: right; color: var(--main); text-decoration: none; font-size: 0.9em; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <h1>My Orders</h1>
+
+    <div class="profile-header">
+        <div class="avatar">A</div>
+        <h2 style="margin:0">User Account</h2>
+        <p style="color:#666; font-size:0.9em;">Member since 2026</p>
+    </div>
+
+    <div class="section-title">My Orders (Bought)</div>
     <div id="orders-list"></div>
+
+    <nav class="tab-bar">
+        <a href="index.html" class="tab-item"><span class="tab-icon">🏠</span>HOME</a>
+        <a href="order.html" class="tab-item"><span class="tab-icon">🛒</span>CART</a>
+        <a href="profile.html" class="tab-item active"><span class="tab-icon">👤</span>PROFILE</a>
+    </nav>
 
 <script>
     const orders = JSON.parse(localStorage.getItem('orders')) || [];
-    document.getElementById('orders-list').innerHTML = orders.map(o => `
-        <div class="order-card">
-            <h3>Order ID: ${o.id}</h3>
-            <p>Items: ${o.items.join(', ')}</p>
-            <p>Total: £${o.price}</p>
-            <p>Status: <span class="status">${o.status}</span></p>
-            <a href="track.html?id=${o.id}" style="color:white">Track Package ➔</a>
-        </div>
-    `).reverse().join('');
+    const list = document.getElementById('orders-list');
+    
+    if(orders.length === 0) {
+        list.innerHTML = `<p style="text-align:center; color:#555; margin-top:20px;">No orders found yet, Sir.</p>`;
+    } else {
+        list.innerHTML = orders.map(o => `
+            <div class="order-card">
+                <div style="font-size:0.8em; color:#888; margin-bottom:5px;">Order ID: ${o.id}</div>
+                <div style="font-weight:bold">${o.items.join(', ')}</div>
+                <div style="font-size:1.2em; margin-top:5px;">£${o.price}</div>
+                <span class="status-pill ${o.status.includes('Delivered') ? 'status-delivered' : 'status-placed'}">${o.status}</span>
+                <a href="track.html?id=${o.id}" class="track-btn">Track ➔</a>
+            </div>
+        `).reverse().join('');
+    }
 </script>
 </body>
 </html>
