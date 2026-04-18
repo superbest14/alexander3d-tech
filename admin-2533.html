@@ -2,78 +2,110 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Alexander 3D</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Alexander 3D | Global Manager</title>
     <style>
-        body { background: #111; color: #00d4ff; font-family: sans-serif; padding: 20px; }
-        .admin-section { background: #222; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-        input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; }
-        button { background: #28a745; color: white; border: none; padding: 15px; width: 100%; cursor: pointer; }
+        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #1a1a1a; }
+        body { background: var(--bg); color: var(--main); font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .box { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid #333; margin-bottom: 30px; }
+        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; }
+        .btn { background: var(--main); color: #000; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 10px; text-transform: uppercase; }
+        .btn-copy { background: #28a745; margin-top: 10px; color: white; }
+        #json-output { background: #000; color: #0f0; padding: 15px; border-radius: 10px; white-space: pre-wrap; font-family: monospace; font-size: 12px; display: none; border: 1px solid #0f0; margin-top: 20px; }
+        .preview-img { width: 100px; height: 100px; object-fit: cover; border-radius: 10px; margin: 5px; border: 1px solid var(--main); }
     </style>
 </head>
 <body>
-    <h1>ADMIN PANEL</h1>
+    <div class="container">
+        <h1>PANEL ADMINA 3D</h1>
+        
+        <div class="box">
+            <h3>Nowy Produkt (Globalny)</h3>
+            <input type="text" id="pName" placeholder="Nazwa produktu">
+            <textarea id="pDesc" placeholder="Opis produktu (wyświetli się u klienta)"></textarea>
+            <input type="number" id="pPrice" placeholder="Cena £">
+            <input type="number" id="pStock" placeholder="Ilość na stanie (Stock)">
+            <input type="text" id="pColors" placeholder="Dostępne kolory (oddziel przecinkiem, np: Black, Red, Blue)">
+            <input type="text" id="pShip" placeholder="Cena wysyłki (0 = Darmowa)">
+            
+            <p>Zdjęcia produktu:</p>
+            <input type="file" id="pFiles" multiple accept="image/*">
+            <div id="image-previews"></div>
+            
+            <button class="btn" onclick="generateJSON()">GENERUJ KOD DO GITHUBA</button>
+        </div>
 
-    <div class="admin-section">
-        <h3>Add New Product</h3>
-        <input type="text" id="pName" placeholder="Product Name">
-        <textarea id="pDesc" placeholder="Description"></textarea>
-        <input type="number" id="pPrice" placeholder="Price £">
-        <input type="text" id="pShip" placeholder="Shipping Price (0 = Free)">
-        <input type="file" id="pFiles" multiple accept="image/*">
-        <button onclick="addProduct()">PUBLISH PRODUCT</button>
-    </div>
-
-    <div class="admin-section">
-        <h3>Update Order Status</h3>
-        <input type="text" id="oid" placeholder="Order ID (e.g. AT-...)">
-        <select id="ostatus">
-            <option value="Manufacturing (Produkowanie)">Manufacturing</option>
-            <option value="Packing (Pakowanie)">Packing</option>
-            <option value="Shipped (Wysłane)">Shipped</option>
-            <option value="In Transit (Kurier ma paczkę)">In Transit</option>
-            <option value="Delayed (Opóźnienia - przyjdzie jutro)">Delayed</option>
-            <option value="Delivered (Dostarczone)">Delivered</option>
-        </select>
-        <input type="text" id="otime" placeholder="Delivery time (e.g. Today 2:00 PM - 4:00 PM)">
-        <button onclick="updateOrder()" style="background:#007bff">UPDATE TRACKING</button>
+        <div id="json-output-container" class="box" style="display:none;">
+            <h3>GOTOWY KOD JSON</h3>
+            <p style="color: #888; font-size: 0.8em;">Skopiuj poniższy kod i wklej go do pliku <b>products.json</b> na GitHubie, aby produkty pojawiły się u wszystkich.</p>
+            <div id="json-output"></div>
+            <button class="btn btn-copy" onclick="copyJSON()">SKOPIUJ KOD</button>
+        </div>
     </div>
 
 <script>
-    let images = [];
+    let uploadedImages = [];
+
+    // Obsługa wielu zdjęć
     document.getElementById('pFiles').onchange = e => {
         const files = e.target.files;
+        uploadedImages = [];
+        document.getElementById('image-previews').innerHTML = '';
+        
         for(let f of files) {
             let reader = new FileReader();
-            reader.onload = r => images.push(r.target.result);
+            reader.onload = r => {
+                uploadedImages.push(r.target.result);
+                document.getElementById('image-previews').innerHTML += `<img src="${r.target.result}" class="preview-img">`;
+            };
             reader.readAsDataURL(f);
         }
     };
 
-    function addProduct() {
-        let p = {
-            name: document.getElementById('pName').value,
-            description: document.getElementById('pDesc').value,
-            price: document.getElementById('pPrice').value,
-            shipping: document.getElementById('pShip').value,
-            images: images,
-            soldOut: false
+    function generateJSON() {
+        const name = document.getElementById('pName').value;
+        const price = document.getElementById('pPrice').value;
+        const desc = document.getElementById('pDesc').value;
+        const stock = document.getElementById('pStock').value;
+        const ship = document.getElementById('pShip').value;
+        const colors = document.getElementById('pColors').value.split(',').map(c => c.trim());
+
+        if(!name || !price || uploadedImages.length === 0) {
+            return alert("Proszę Pana, trzeba podać nazwę, cenę i chociaż jedno zdjęcie!");
+        }
+
+        // Pobieramy obecną listę z pamięci, żeby dodać nowy produkt do istniejących
+        let currentProducts = JSON.parse(localStorage.getItem('temp_products')) || [];
+        
+        const newProduct = {
+            id: Date.now(),
+            name: name,
+            description: desc,
+            price: price,
+            stock: parseInt(stock),
+            shipping: ship,
+            colors: colors,
+            images: uploadedImages
         };
-        let products = JSON.parse(localStorage.getItem('products')) || [];
-        products.push(p);
-        localStorage.setItem('products', JSON.stringify(products));
-        alert("Product Added!");
+
+        currentProducts.push(newProduct);
+        localStorage.setItem('temp_products', JSON.stringify(currentProducts));
+
+        // Pokazywanie wyniku
+        const output = document.getElementById('json-output');
+        output.textContent = JSON.stringify(currentProducts, null, 2);
+        output.style.display = 'block';
+        document.getElementById('json-output-container').style.display = 'block';
+        
+        alert("Kod wygenerowany! Skopiuj go teraz do pliku na GitHubie.");
     }
 
-    function updateOrder() {
-        let id = document.getElementById('oid').value;
-        let orders = JSON.parse(localStorage.getItem('orders')) || [];
-        let o = orders.find(x => x.id === id);
-        if(o) {
-            o.status = document.getElementById('ostatus').value;
-            o.deliveryTime = document.getElementById('otime').value;
-            localStorage.setItem('orders', JSON.stringify(orders));
-            alert("Status Updated!");
-        }
+    function copyJSON() {
+        const text = document.getElementById('json-output').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Skopiowano! Teraz wklej to do products.json na GitHubie.");
+        });
     }
 </script>
 </body>
