@@ -1,72 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alexander 3D Tech | Store</title>
-<style>
-:root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; --text: #eee; }
-body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-.nav { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main); padding-bottom: 10px; margin-bottom: 30px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-.product-card { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #333; transition: 0.3s; position: relative; }
-.product-card img { width: 100%; height: 250px; object-fit: cover; }
-.info { padding: 15px; }
-.price { font-size: 1.5em; color: var(--main); font-weight: bold; }
-.buy-btn { background: var(--main); color: #000; border: none; padding: 10px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-.track-link { display: block; margin-top: 10px; color: #888; text-decoration: none; font-size: 0.9em; }
-.track-link:hover { color: var(--main); }
-#cart { position: fixed; bottom: 20px; right: 20px; background: #28a745; padding: 20px; border-radius: 15px; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alexander 3D Tech | Home</title>
+    <style>
+        :root { --main: #00d4ff; --bg: #0b0b0b; --card: #161616; --text: #eee; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        nav { display: flex; justify-content: space-around; background: #111; padding: 20px; border-bottom: 2px solid var(--main); position: sticky; top: 0; z-index: 1000; }
+        nav a { color: white; text-decoration: none; font-weight: bold; }
+        .hero { text-align: center; padding: 40px; background: linear-gradient(to bottom, #111, #0b0b0b); }
+        
+        /* Shipping Table */
+        .shipping-table { max-width: 800px; margin: 20px auto; border-collapse: collapse; width: 90%; background: #1a1a1a; border-radius: 10px; overflow: hidden; }
+        .shipping-table th, .shipping-table td { padding: 15px; border: 1px solid #333; text-align: left; }
+        .shipping-table th { background: var(--main); color: #000; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
+        .card { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #333; transition: 0.3s; cursor: pointer; }
+        .card img { width: 100%; height: 200px; object-fit: cover; }
+        .card-info { padding: 15px; }
+        .status-tag { font-size: 0.8em; padding: 4px 8px; border-radius: 5px; float: right; }
+        .sold-out { background: #ff4444; color: white; }
+        .price { font-size: 1.4em; color: var(--main); font-weight: bold; }
+    </style>
 </head>
 <body>
-<div class="nav">
-<h1>ALEXANDER 3D</h1>
-<div id="order-info"></div>
-</div>
+    <nav>
+        <a href="index.html">HOME</a>
+        <a href="order.html">CART (<span id="cart-count">0</span>)</a>
+        <a href="profile.html">PROFILE / BOUGHT</a>
+    </nav>
 
-<div class="grid" id="product-list">
-</div>
+    <div class="hero">
+        <h1>ALEXANDER 3D TECH</h1>
+        <p>Premium Engineering & Custom Parts</p>
+    </div>
 
-<div id="cart">
-<h3 style="margin:0">Checkout</h3>
-<p id="item-desc"></p>
-<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
-<input type="hidden" name="cmd" value="_xclick">
-<input type="hidden" name="business" value="yinyan86@gmail.com">
-<input type="hidden" name="currency_code" value="GBP">
-<input type="hidden" name="item_name" id="pp_name">
-<input type="hidden" name="amount" id="pp_amount">
-<button class="buy-btn" style="background:#fff">Pay via PayPal</button>
-</form>
-</div>
+    <table class="shipping-table">
+        <thead><tr><th>Region</th><th>Estimated Delivery</th><th>Price</th></tr></thead>
+        <tbody>
+            <tr><td>United Kingdom</td><td>1-3 Working Days</td><td>Free / Calculated</td></tr>
+            <tr><td>Europe</td><td>5-7 Working Days</td><td>£9.99</td></tr>
+        </tbody>
+    </table>
+
+    <div class="grid" id="main-grid"></div>
 
 <script>
-// Load products from LocalStorage (added via Admin)
-function loadProducts() {
-const products = JSON.parse(localStorage.getItem('products')) || [];
-const container = document.getElementById('product-list');
-container.innerHTML = products.map((p, index) => `
-<div class="product-card">
-<img src="${p.image}" alt="${p.name}">
-<div class="info">
-<div style="font-weight:bold">${p.name}</div>
-<div class="price">£${p.price}</div>
-<button class="buy-btn" onclick="openCart('${p.name}', ${p.price})">BUY NOW</button>
-<a href="tracking.html?id=${p.lastOrderId || 'NONE'}" class="track-link">Track last order for this item</a>
-</div>
-</div>
-`).join('');
-}
-
-function openCart(name, price) {
-document.getElementById('cart').style.display = 'block';
-document.getElementById('item-desc').innerText = name + " - £" + price;
-document.getElementById('pp_name').value = name;
-document.getElementById('pp_amount').value = price;
-}
-
-loadProducts();
+    function renderProducts() {
+        const products = JSON.parse(localStorage.getItem('products')) || [];
+        const grid = document.getElementById('main-grid');
+        grid.innerHTML = products.map((p, i) => `
+            <div class="card" onclick="window.location.href='product.html?id=${i}'">
+                <img src="${p.images ? p.images[0] : ''}">
+                <div class="card-info">
+                    ${p.soldOut ? '<span class="status-tag sold-out">SOLD OUT</span>' : ''}
+                    <div style="font-weight:bold">${p.name}</div>
+                    <div class="price">£${p.price}</div>
+                    <div style="font-size:0.8em; color:#888">Shipping: ${p.shipping === '0' ? 'FREE' : '£'+p.shipping}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+    document.getElementById('cart-count').innerText = (JSON.parse(localStorage.getItem('cart')) || []).length;
+    renderProducts();
 </script>
 </body>
 </html>
